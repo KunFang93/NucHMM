@@ -13,8 +13,29 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Install
 
-Please check the file 'INSTALL.md' in the distribution.
+The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html) and the [**bioconda**](http://bioconda.github.io) channel. 
 
+First you need to install bioconda:
+
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
+export PATH="$HOME/miniconda/bin:$PATH"
+```
+
+Linux:
+
+```
+conda install -c bioconda epic2
+```
+
+macOS:
+
+```
+pip install Cython
+pip install pysam
+pip install epic2
+```
 ## Usage
 
 ```
