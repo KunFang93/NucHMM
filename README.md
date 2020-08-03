@@ -6,10 +6,10 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Recent Changes for NucHMM (version 1.0)
 
-None
+*N/A*
 
 ## Workflow
-<img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="450">
+<img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="900">
 
 ## Install
 
