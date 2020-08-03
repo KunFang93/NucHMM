@@ -1,0 +1,9 @@
+/*
+
+namespace HMM
+{
+
+} // namespace HMM
+
+
+*/

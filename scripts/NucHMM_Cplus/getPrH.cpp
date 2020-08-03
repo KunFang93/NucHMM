@@ -1,0 +1,3 @@
+namespace HMM
+{
+} //namespace HMM
