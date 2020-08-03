@@ -15,7 +15,7 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 The program is fully tested on *Linux 3.10.0/CentOS 7*.
 
-The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html) and the [**bioconda**](http://bioconda.github.io) channel. 
+The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html). 
 
 Install miniconda:
 
@@ -58,7 +58,8 @@ Options:
   --help                  Show this message and exit
 
 Commands:
-  nuchmm-prep             
+  nuchmm-prep             Prepare ChIP-seq peaks files or nucleosome locations files from fastq/bam files
+  
 ```
 
 Example for regular peak calling: `macs2 callpeak -t ChIP.bam -c
