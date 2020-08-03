@@ -11,31 +11,36 @@ Nucleosome organization, often described as its positioning, spacing and regular
 ## Workflow
 <img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="900">
 
-## Install
+## Installation
+
+The program is fully tested on Linux 3.10.0/CentOS 7.
 
 The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html) and the [**bioconda**](http://bioconda.github.io) channel. 
 
-First you need to install bioconda:
+Install miniconda:
 
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
-export PATH="$HOME/miniconda/bin:$PATH"
+bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-Linux:
+Create the conda environment with dependents and Activate the environment:
 
 ```
-conda install -c bioconda epic2
+conda env create -n nuchmm -f env.yaml
+conda activate nuchmm
 ```
 
-macOS:
+Download NucHMM and install it
 
 ```
-pip install Cython
-pip install pysam
-pip install epic2
+git clone https://github.com/KunFang93/NucHMM.git
+cd <path to the NucHMM>/scripts
+pip install --editable .
+cd NucHMM_Cplus/
+make
 ```
+
 ## Usage
 
 ```
