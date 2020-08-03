@@ -13,7 +13,7 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Installation
 
-The program is fully tested on Linux 3.10.0/CentOS 7.
+The program is fully tested on *Linux 3.10.0/CentOS 7*.
 
 The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html) and the [**bioconda**](http://bioconda.github.io) channel. 
 
@@ -24,17 +24,23 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-Create the conda environment with dependents and Activate the environment:
-
-```
-conda env create -n nuchmm -f env.yaml
-conda activate nuchmm
-```
-
-Download NucHMM and install it
+Download NucHMM
 
 ```
 git clone https://github.com/KunFang93/NucHMM.git
+```
+
+
+Create the conda environment with dependents and Activate the environment:
+
+```
+conda env create -n nuchmm -f <path to NucHMM>/scripts/env.yaml
+conda activate nuchmm
+```
+
+Install NucHMM
+
+```
 cd <path to the NucHMM>/scripts
 pip install --editable .
 cd NucHMM_Cplus/
@@ -44,8 +50,15 @@ make
 ## Usage
 
 ```
-macs2 [-h] [--version]
-    {callpeak,bdgpeakcall,bdgbroadcall,bdgcmp,bdgopt,cmbreps,bdgdiff,filterdup,predictd,pileup,randsample,refinepeak}
+NucHMM [OPTIONS] COMMAND [ARGS]
+
+Options:
+  --version               Show the version and exit
+  --hmm-directory PATH    the path of the NucHMM_Cplus/bin folder
+  --help                  Show this message and exit
+
+Commands:
+  nuchmm-prep             
 ```
 
 Example for regular peak calling: `macs2 callpeak -t ChIP.bam -c
