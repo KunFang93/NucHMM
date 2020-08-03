@@ -174,7 +174,7 @@ def Nuc_calling(bamfile,pe,inpspath):
     g_file.close()
     count += 1
     final_nuc_file = 'nuc_calling_result/' + bamfile_body + '_nucleosome_location.bed'
-    subprocess.call('tail -n +' + str(count) + ' ' + gathering_file + ' > ' + final_nuc_file)
+    subprocess.call('tail -n +' + str(count) + ' ' + gathering_file + ' > ' + final_nuc_file,shell=True)
     return final_nuc_file
 
 def Peak_Nuc_calling_step(fqinfodict,inpspath):
