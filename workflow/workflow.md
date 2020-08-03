@@ -1,3 +1,3 @@
-**NucHMM Initialization**
-**NucHMM Training**
-**NucHMM screening**
+**NucHMM Initialization**  
+**NucHMM Training**  
+**NucHMM screening**  
