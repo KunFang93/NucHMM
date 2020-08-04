@@ -58,9 +58,31 @@ Options:
   --help                  Show this message and exit
 
 Commands:
-  nuchmm-prep             Prepare ChIP-seq peaks files or nucleosome locations files from fastq/bam files
-  
+  nuchmm-prep             Prepare ChIP-seq peaks files or nucleosome locations files from fastq/bam files.
+  nuchmm-init             Assign histone marks to nucleosomes and create precomp bins for nuchmm-train.
+  nuchmm-train            Use Hidden Markov Model(HMM) and Viterbi Algorithm to decode HMM states for each nucleosomes.
+  nuchmm-screen-init      Initializae the screen step by providing sorted state files and the suggested genomic locations of HMM states.
+  nuchmm-screen           Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning.
+  hmm-visualize           Visualize the Transition and Mark-state matrix.
 ```
+
+## Quick Start
+
+**Step1**:(Skipped this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder).   
+
+If the input all files in fastq format
+```
+NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename>
+```
+If the input all files in bam format
+```
+# not include MNase-seq bam
+NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
+# include MNase-seq bam
+NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
+```
+
+NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
 
 Example for regular peak calling: `macs2 callpeak -t ChIP.bam -c
 Control.bam -f BAM -g hs -n test -B -q 0.01`
@@ -70,20 +92,6 @@ Control.bam --broad -g hs --broad-cutoff 0.1`
 
 There are twelve functions available in MAC2S serving as sub-commands.
 
-Subcommand | Description
------------|----------
-`callpeak` | Main MACS2 Function to call peaks from alignment results.
-`bdgpeakcall` | Call peaks from bedGraph output.
-`bdgbroadcall` | Call broad peaks from bedGraph output.
-`bdgcmp` | Comparing two signal tracks in bedGraph format.
-`bdgopt` | Operate the score column of bedGraph file.
-`cmbreps` | Combine BEDGraphs of scores from replicates.
-`bdgdiff` | Differential peak detection based on paired four bedGraph files.
-`filterdup` | Remove duplicate reads, then save in BED/BEDPE format.
-`predictd` | Predict d or fragment size from alignment results.
-`pileup` | Pileup aligned reads (single-end) or fragments (paired-end)
-`randsample` | Randomly choose a number/percentage of total reads.
-`refinepeak` | Take raw reads alignment, refine peak summits.
 
 We only cover `callpeak` subcommand in this document. Please use
 `macs2 COMMAND -h` to see the detail description for each option of
