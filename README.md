@@ -69,8 +69,8 @@ Commands:
 ## Quick Start
 *__Note:__ The context in <> should be replace by user according to real data*
 
-**Step1**:  
-*Skipped this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder.*   
+### **Step1**:  
+*__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. we __recommend__ use your own favored pipeline*   
 
 If the input all files in fastq format
 ```
@@ -89,7 +89,7 @@ NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
 ```
 
-**Step2**:  
+### **Step2**:  
 First create <celltype>_histone_mark.txt file that contains all histone mark peak files
 
 
