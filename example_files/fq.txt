@@ -1,0 +1,5 @@
+# for single-end: file.fq read-length chip/mnase narrow/broad/none (don't have this line in real data)
+# for paired-end: file_R1.fq file_R2.fq read-length chip/mnase narrow/broad/none (don't have this line in real data)
+MCF7_H3K4me3.fq.gz 36 chip narrow
+MCF7_H3K36me3.fq.gz 50 chip broad
+MCF7_MNase_R1.fq.gz MCF7_MNase_R2.fq.gz 50 mnase none
