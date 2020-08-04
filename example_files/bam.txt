@@ -1,3 +1,4 @@
+# format: file.bam PE/SE chip/mnase narrow/broad/none (don't write this line in real data)
 MCF7_H3K4me3.bam SE chip narrow
 MCF7_H3K36me.bam SE chip broad
 MCF7_MNase.bam PE mnase none
