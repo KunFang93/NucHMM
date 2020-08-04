@@ -1,1 +1,4 @@
+# the order of histone marks in this file should be same with <celltype>_histone_marks.txt file (don't write this line in real data).
 H3K4me3
+H3K4me1
+H3K36me3
