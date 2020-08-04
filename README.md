@@ -67,20 +67,33 @@ Commands:
 ```
 
 ## Quick Start
+*__Note:__ The context in <> should be replace by user according to real data*
 
 **Step1**:(Skipped this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder).   
 
 If the input all files in fastq format
 ```
+# not include MNase-seq fq
 NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename>
+
+# include MNase-seq fq
+NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename> -inps <Full Path to iNPS.py>
 ```
 If the input all files in bam format
 ```
 # not include MNase-seq bam
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
+
 # include MNase-seq bam
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
 ```
+
+**Step2**:
+First create <celltype>_histone_mark.txt file that contains all histone mark peak files
+
+
+
+
 
 NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
 
