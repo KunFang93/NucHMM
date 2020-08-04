@@ -1,0 +1,3 @@
+<Full Path>/MCF7_H3K4me3_peaks.bed
+<Full Path>/MCF7_H3K4me1_peaks.bed
+<Full Path>/MCF7_H3K36me3_peaks.bed
