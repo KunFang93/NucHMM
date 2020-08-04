@@ -70,7 +70,8 @@ Commands:
 *__Note:__ The context in <> should be replace by user according to real data*
 
 ### **Step1**:  
-*__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. we __recommend__ use your own favored pipeline*   
+
+__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. we __recommend__ use your own favored pipeline.  
 
 If the input all files in fastq format
 ```
@@ -88,9 +89,21 @@ NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
 # include MNase-seq bam
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
 ```
+The output peak files will locate at **<current dir>/peakcalling_result**, and the output nucleosome location files will locate at **<current dir>/nuc_calling_reuslt**.
 
-### **Step2**:  
-First create <celltype>_histone_mark.txt file that contains all histone mark peak files
+### **Step2**: 
+
+First manually create 
+```
+1. <celltype>_histone_marks.txt file that contains all histone mark peak files;
+2. histonelists_list.txt contains all <celltype>_histone_marks.txt file (Check the those files format in exmaple_files folder);
+3. nucposfile_list.txt contains all <celltype>_nucleosome_locations.bed
+```
+
+Then, use command
+```
+NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Full Path>/annotation/genebody_anno.txt -rmf
+```
 
 
 
