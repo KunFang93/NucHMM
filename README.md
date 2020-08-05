@@ -216,6 +216,7 @@ Commands:
    Show help message.
    
  * ### Commands
+ 
    * #### nuchmm-prep
    
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for MNase-seq, we only accept result from iNPS currently.
@@ -244,7 +245,9 @@ Commands:
      Number of threads
      
   * #### nuchmm-init
-   Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt
+  
+   Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt.
+   
      * `--inputpeakslistfiles(-iplf)`:
    
    * #### nuchmm-train
