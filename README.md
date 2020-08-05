@@ -204,9 +204,9 @@ Commands:
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
  * ### Options
-   * **--version:**              Show NucHMM current version and exit.
-   * **--hmm-directory PATH:**   Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
-   * **--help:**                 Show help message.
+   * `**--version:**`              Show NucHMM current version and exit.
+   * `**--hmm-directory PATH:**`   Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
+   * `**--help:**`                 Show help message.
  * ### Commands
    * #### nuchmm-prep
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
