@@ -245,22 +245,34 @@ Commands:
      * `--inputpeakslistfiles(-iplf)`[Required]:  
      Input TF-peaks_files list. Check the histonelists_list.txt in example_files folder for the detailed format.
      
-     * `--nucpositionfiles(-nucf)`:  
+     * `--nucpositionfiles(-nucf)`[Required]:  
      Input the nucleosome position files list. Check the nucposfiles_list.txt in example_files folder for the detailed format.
      
-     * `--genefile(-gf)`:  
+     * `--genefile(-gf)`[Required]:  
      Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
      
      * `--intersect_cutoff(-ic)`:  
      The intersect threshold to assign histone mark peaks to the nucleosomes. Default is 0.3. For example, for a 150 bp nucleosome core region, if a histone mark peak have 45 (150 * 0.3) bp overlap with this nucleosome. Then the program will consider this nucleosome has this histone mark.
      
-     * `--gap(-g)`:
+     * `--gap(-g)`:  
+     Flag of give a mark to inter-nucleosome region (gaps between nucleosomes). Default: False.
      
-     * `--upboundary(-up)`:
-     * `--downboundary(-down)`:
-     * `--outputfilelist(-ofl)`:
-     * `--refgenome(-refg)`:
-     * `--removetmpfile(-rmf)`:
+     * `--upboundary(-up)`:  
+     Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
+     
+     * `--downboundary(-down)`:    
+     Downstream boundary of TTS for selecting the training region. Default:10000. The larger the number, the more computational resources (memory) and training time needed.
+     
+     * `--outputfilelist(-ofl)`:  
+     Specify the output files path and name. 
+     Format: 
+     <Path>/<celltype1>.precomp   
+     <Path>/<celltype2>.precomp   
+     ..  
+     <Path>/<celltypeN>.precomp
+      
+     * `--refgenome(-refg)`:  
+     * `--removetmpfile(-rmf)`:  
    * #### nuchmm-train
    * #### nuchmm-screen-init
    * #### nuchmm-screen
