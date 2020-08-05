@@ -281,7 +281,7 @@ Commands:
    
      Use Hidden Markov Model(HMM) and Viterbi Algorithm to decode HMM states for each nucleosomes. 
      
-     * `--refgenome(-refg)`[Required]:  
+     * `--refgenome(-refg)`[**Required**]:  
      Input the reference genome file that contains the length of each chromosomes. Check the hg19.chrom.sizes.txt in annotation_files folder.
      
      * `--precomp_list(-pl)`[Required]:  
@@ -321,6 +321,10 @@ Commands:
      Remove temporary files.
    
    * #### nuchmm-screen-init
+     
+     Initializae the screen step by providing sorted state files and the suggested genomic locations of HMM states.
+     
+     * `--rawhmmfile(-rhf)`[**Required**]
    * #### nuchmm-screen
    * #### matrix-visualize
 
