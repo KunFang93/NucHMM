@@ -1,0 +1,11 @@
+S1      5'-Genebody
+S2      Distal  Proximal
+S3      3'-Genebody
+S4      Distal  Proximal
+S5      Promoter
+S6      3'-Genebody
+S7      Genebody
+S9      Promoter
+S10     Distal  Proximal
+S11     Genebody
+S13     Promoter        Genebody(5'-Genebody)
