@@ -212,7 +212,7 @@ Commands:
  * ### Commands
    * #### nuchmm-prep
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for MNase-seq, we only accept result from iNPS currently.
-    * `--fastq/--bam`
+     * `--fastq/--bam`
      
      *
    * #### nuchmm-init
