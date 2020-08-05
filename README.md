@@ -192,9 +192,16 @@ NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt
 -sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -rmf
 ```
 
-The default output files：  
+The default output files:
+```
 <celltypes>_gl_an_resp_pos_filt.bed
- 
+functional_nucleosome_state_post.txt
+Nuc_pos_vio.png, Regularity_score_filt.png, State_Spectral_density_filt.png, Array_distribution_filt.png
+```
+
+The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
+The final kept nucleosomes are in < celltypes >_gl_an_resp_pos_filt.bed 
+
 
 NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
 
