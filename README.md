@@ -69,9 +69,8 @@ Commands:
 ## Quick Start
 *__Note:__ The context in <> should be replace by user according to real data*
 
-### **Step1**:  
-
-ChIP-seq peaks and MNase-seq nucleosome locations files preparation.  
+### **Step1:ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
+ 
 
 __Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
 
@@ -93,9 +92,8 @@ NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to NucHMM>/scripts/
 ```
 The output peak files will locate at **peakcalling_result/ folder**, and the output nucleosome location files will locate at **nuc_calling_result/ folder**.
 
-### **Step2**: 
+### **Step2:NucHMM initialization.** 
 
-NucHMM initialization.
 
 First manually create 
 ```
@@ -112,9 +110,8 @@ NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Fu
 
 The default output file will be named <celltype>_<# histone mark>.precomp in the current directory. User can specify the ouptut name by -ofl parameter.  
   
-### **Step3**
+### **Step3:NucHMM training.**
 
-NucHMM training.
 
 First manually create.  
 ```
@@ -136,9 +133,8 @@ nohup NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuc
 
 The default output file will be name HMM_<# histone marks>.rawhmm in the current directory. User can specify the output name by -ohmm parameter.
 
-### **Step4**
+### **Step4:Matrix visualization and background state detection.**
 
-Matrix visualization and background state detection.
 
 Manually create 
 ```
@@ -158,9 +154,8 @@ View the Mark_state matrix and define no histone mark HMM states as background s
 (e.g. in example_files/Mark_state.png, 8 and 12 is background states)
 ```
 
-### **Step5**
+### **Step5:NucHMM screen initialization.**
 
-NucHMM screen initialization.
 
 Note the order of -ct parameter should be same with the cell type order in histonelists_list.txt
 ```
