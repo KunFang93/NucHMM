@@ -1,0 +1,3 @@
+<Full Path>/<celltype1>_like_wigs.txt
+<Full Path>/<celltype2>_like_wigs.txt
+<Full Path>/<celltype3>_like_wigs.txt
