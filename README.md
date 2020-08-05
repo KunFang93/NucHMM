@@ -377,7 +377,7 @@ Commands:
      * `--uppromoter(-uProm)`:  
      Specify upstream boundary of the promoter region. Used in identifying the genomic location of HMM states. Default: 1000.
      
-     * `--downbound(-db)`: 
+     * `--downbound(-db)`:   
      Specify downstream boundary for plotting the distribution, cannot exceed than `--downboundary` used in nuchmm-init. Default: 10000.
      
      * `--rescalelength(-rl)`:  
@@ -426,7 +426,7 @@ Commands:
      * `--uppromoter(-uProm)`:  
      Specify upstream boundary of the promoter region for genomic location filtering. Default: 1000.
      
-     * `--cutoffdist(-cfd)`: 
+     * `--cutoffdist(-cfd)`:  
      Specify the maximum distance between two nucleosomes in a nucleosome array. If the distance between two nucleosome larger than this cutoff distance, the program will consider these two nucleosomes are in different nucleosome arrays. Default: 350.
      
      * `--upratio(-ur)`:  
