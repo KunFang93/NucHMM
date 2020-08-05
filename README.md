@@ -69,10 +69,10 @@ Commands:
 ## Quick Start
 *__Note:__ The context in <> should be replace by user according to real data*
 
-### **Step1:ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
+### **Step1: ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
  
 
-__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
+__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header, and please keep the all like_wig files). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
 
 If the input all files in fastq format
 ```
@@ -92,7 +92,7 @@ NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to NucHMM>/scripts/
 ```
 The output peak files will locate at **peakcalling_result/ folder**, and the output nucleosome location files will locate at **nuc_calling_result/ folder**.
 
-### **Step2:NucHMM initialization.** 
+### **Step2: NucHMM initialization.** 
 
 
 First manually create 
@@ -110,7 +110,7 @@ NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Fu
 
 The default output file will be named <celltype>_<# histone mark>.precomp in the current directory. User can specify the ouptut name by -ofl parameter.  
   
-### **Step3:NucHMM training.**
+### **Step3: NucHMM training.**
 
 
 First manually create.  
@@ -133,7 +133,7 @@ nohup NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuc
 
 The default output file will be name HMM_<# histone marks>.rawhmm in the current directory. User can specify the output name by -ohmm parameter.
 
-### **Step4:Matrix visualization and background state detection.**
+### **Step4: Matrix visualization and background state detection.**
 
 
 Manually create 
@@ -154,7 +154,7 @@ View the Mark_state matrix and define no histone mark HMM states as background s
 (e.g. in example_files/Mark_state.png, 8 and 12 is background states)
 ```
 
-### **Step5:NucHMM screen initialization.**
+### **Step5: NucHMM screen initialization.**
 
 
 Note the order of -ct parameter should be same with the cell type order in histonelists_list.txt
@@ -165,7 +165,36 @@ NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.t
 -ct <celltype1> -ct <celltype2> .. -ct <celltypeN> -ptm -rmf
 ```
 
+The default output files:   
+  Total_distribution_up.png, Total_distribution_gbdown.png, Total_distribution.png  
+  nuchmm_screen_init_result_files.txt  
+  states_genomic_location.txt.
 
+### **Step6: NucHMM screen.**
+
+Firstly,
+```
+Double-Check states_genomic_location.txt and Total_distribution.png.
+Make sure the predicted genomic location in states_genomic_location.txt fits your empirical knowledge.
+If not, you can manually edit the states_genomic_location.txt file.
+```
+
+Then,
+```
+Maunally create nucdetaillist.txt, <celltype>_like_wig.txt and like_wigs_list.txt
+(check the file format in exmaple_files/nucdetaillist.txt, example_files/<celltype>_like_wigs.txt and like_wig_files.txt)
+```
+
+Finally,
+```
+NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
+-lwfl like_wigs_list.txt -ndfl nucdetaillist.txt -bg <background state1> .. -bg <background stateN> \
+-sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -rmf
+```
+
+The default output files：  
+<celltypes>_gl_an_resp_pos_filt.bed
+ 
 
 NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
 
