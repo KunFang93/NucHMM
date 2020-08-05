@@ -58,18 +58,18 @@ __Skip__ this step if you alreay have the histone marks' peak files and iNPS der
 If the input all files in fastq format
 ```
 # not include MNase-seq fq
-NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename>
+NucHMM nuchmm-prep --fastq -p 20 -ifql fqs_list.txt -qc -bip <Full Path to bowtie index>/<idx-basename>
 
 # include MNase-seq fq
-NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename> -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
+NucHMM nuchmm-prep --fastq -p 20 -ifql fqs_list.txt -qc -bip <Full Path to bowtie index>/<idx-basename> -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
 ```
 If the input all files in bam format
 ```
 # not include MNase-seq bam
-NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
+NucHMM nuchmm-prep --bam -p 20 -ibl bams_list.txt
 
 # include MNase-seq bam
-NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
+NucHMM nuchmm-prep --bam -p 20 -ibl bams_list.txt -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
 ```
 The output peak files will locate at **peakcalling_result/ folder**, and the output nucleosome location files will locate at **nuc_calling_result/ folder**.
 
@@ -211,17 +211,20 @@ Commands:
    * `--help`:&nbsp;&nbsp;&nbsp;&nbsp;Show help message.
  * ### Commands
    * #### nuchmm-prep
+   
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for MNase-seq, we only accept result from iNPS currently.
-     * `--fastq/--bam`:&nbsp;&nbsp;&nbsp;&nbsp;Input data type
-     * `--inputfqslist(-ifql)`
-     * `--inputbamslist(-ibl)`
-     * `--qualitycontrol(-qc)`
-     * `--bowtieindexpath(-bip)`
-     * `--bowtie2indexpath(-b2ip)`
-     * `--inpspath(-inps)`
-     * `--threads(-p)`
+     * `--fastq/--bam`:&nbsp;&nbsp;&nbsp;&nbsp;Indicate the input data type
+     * `--inputfqslist(-ifql)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --fastq command. Input the fastqs list file. Input format: 'FILE READ-LEN SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check fqs_list.txt in example_files folder for the detailed format.
+     * `--inputbamslist(-ibl)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --bam command. Input the bams list. Input format: for each line 'FILE PE?SE SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check bams_list.txt in example_files folder for the detailed format.
+     * `--qualitycontrol(-qc)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --fastq command. Flag for whether run QC trim step for fastq files.
+     * `--bowtieindexpath(-bip)`:&nbsp;&nbsp;&nbsp;&nbsp;Required if input format is fastq, the path and basename of bowtie index (bowtie -x)
+     * `--bowtie2indexpath(-b2ip):`&nbsp;&nbsp;&nbsp;&nbsp;Required if input format is fastq, the path and basename of bowtie2 index (bowtie2 -x)
+     * `--inpspath(-inps)`:&nbsp;&nbsp;&nbsp;&nbsp;Required if input has MNase-seq, the path of iNPS.py. For example, /data/NucHMM/scripts/iNPS_V1.2.2.py.
+     * `--threads(-p)`:&nbsp;&nbsp;&nbsp;&nbsp;Number of threads
      
    * #### nuchmm-init
+   
+   
    * #### nuchmm-train
    * #### nuchmm-screen-init
    * #### nuchmm-screen
