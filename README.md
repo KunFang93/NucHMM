@@ -204,6 +204,7 @@ Commands:
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
  * ### Options
+   * --version
  * ### Commands
    * #### nuchmm-prep
    * #### nuchmm-init
