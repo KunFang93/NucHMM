@@ -96,7 +96,7 @@ The output peak files will locate at **peakcalling_result/ folder**, and the out
 First manually create 
 ```
 # Check the those files format in exmaple_files folder.
-1. <celltype>_histone_marks.txt file that contains all histone mark peak files;
+1. <celltype>_histone_marks.txt that contains all histone mark peak files;
 2. histonelists_list.txt contains all <celltype>_histone_marks.txt file;
 3. nucposfile_list.txt contains all <celltype>_nucleosome_locations.bed.
 ```
@@ -112,14 +112,19 @@ The default output file will be named <celltype>_<# histone mark>.precomp in the
 
 First manually create.  
 ```
-__precompfiles_list.txt__ that contains all precomp files result from nuchmm-init.
+precompfiles_list.txt that contains all precomp files result from nuchmm-init. 
+(check the file format in example_files/histone_marks.txt)
 ```
+
 Then, 
 
 ```
 NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -rmf
+```
 
-# Note that training process could take few hours up to a day depends on how much data you input. We normally use nohup command to run the this nuchmm-train command in the background by
+Note that training process could take few hours up to a day depends on how much data you input. We normally use nohup command to run the this nuchmm-train command in the background by
+
+```
 nohup NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -rmf &> train.log &
 ```
 
@@ -127,7 +132,11 @@ The default output file will be name HMM_<# histone marks>.rawhmm in the current
 
 ### **Step4**
 
-Manually create __histone_marks.txt__ file that contains all histone marks (check the file format in example_files folder).  
+Manually create 
+```
+histone_marks.txt file that contains all histone marks. 
+(check the file format in example_files/histone_marks.txt)  
+```
 
 Then, visualize the Transition and Mark-state matrix first.
 ```
