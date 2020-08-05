@@ -17,28 +17,28 @@ The program is tested on *Linux 3.10.0/CentOS 7*.
 
 The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html). 
 
-### Install miniconda:
+**Install miniconda:**
 
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-### Download NucHMM
+**Download NucHMM:**
 
 ```
 git clone https://github.com/KunFang93/NucHMM.git
 ```
 
 
-### Create the conda environment with dependents and Activate the environment:
+**Create the conda environment with dependents and Activate the environment:**
 
 ```
 conda env create -n nuchmm -f <path to NucHMM>/scripts/env.yaml
 conda activate nuchmm
 ```
 
-### Install NucHMM
+**Install NucHMM:**
 
 ```
 cd <path to the NucHMM>/scripts
@@ -203,5 +203,15 @@ Commands:
   nuchmm-screen           Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning.
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
+ ### Options
+ ### Commands
+  #### nuchmm-prep
+  #### nuchmm-init
+  #### nuchmm-train
+  #### nuchmm-screen-init
+  #### nuchmm-screen
+  #### matrix-visualize
+
+
 NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
 
