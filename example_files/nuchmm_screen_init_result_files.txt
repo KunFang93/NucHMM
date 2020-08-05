@@ -1,0 +1,3 @@
+<Full Path>/<celltype1>_states_srt_uniq.bed
+<Full Path>/<celltype2>_states_srt_uniq.bed
+<Full Path>/<celltype3>_states_srt_uniq.bed
