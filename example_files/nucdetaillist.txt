@@ -1,4 +1,4 @@
-## contain all cell types iNPS result, the order of the cell type should be same with 
+## contain all cell types iNPS result, the order of the cell type should be same with histonelists_list.txt
 <Full Path>/<celltype1>_nucleosome_location.bed
 <Full Path>/<celltype2>_nucleosome_location.bed
 <Full Path>/<celltype3>_nucleosome_location.bed
