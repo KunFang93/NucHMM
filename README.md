@@ -13,7 +13,7 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Installation
 
-The program is fully tested on *Linux 3.10.0/CentOS 7*.
+The program is tested on *Linux 3.10.0/CentOS 7*.
 
 The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html). 
 
@@ -71,7 +71,9 @@ Commands:
 
 ### **Step1**:  
 
-__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. we __recommend__ use your own favored pipeline.  
+ChIP-seq peaks and MNase-seq nucleosome locations files preparation.  
+
+__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
 
 If the input all files in fastq format
 ```
@@ -79,7 +81,7 @@ If the input all files in fastq format
 NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename>
 
 # include MNase-seq fq
-NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename> -inps <Full Path to iNPS.py>
+NucHMM nuchmm-prep --fastq -p 20 -ifql fq.txt -qc -bip <Full Path to bowtie index>/<idx-basename> -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
 ```
 If the input all files in bam format
 ```
@@ -87,11 +89,13 @@ If the input all files in bam format
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
 
 # include MNase-seq bam
-NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
+NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to NucHMM>/scripts/iNPS_V1.2.2.py
 ```
 The output peak files will locate at **peakcalling_result/ folder**, and the output nucleosome location files will locate at **nuc_calling_result/ folder**.
 
 ### **Step2**: 
+
+NucHMM initialization.
 
 First manually create 
 ```
@@ -103,12 +107,14 @@ First manually create
 
 Then, use command
 ```
-NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Full Path>/annotation/genebody_anno.txt -rmf
+NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt -rmf
 ```
 
 The default output file will be named <celltype>_<# histone mark>.precomp in the current directory. User can specify the ouptut name by -ofl parameter.  
   
 ### **Step3**
+
+NucHMM training.
 
 First manually create.  
 ```
@@ -132,6 +138,8 @@ The default output file will be name HMM_<# histone marks>.rawhmm in the current
 
 ### **Step4**
 
+Matrix visualization and background state detection.
+
 Manually create 
 ```
 histone_marks.txt file that contains all histone marks. 
@@ -146,13 +154,20 @@ NucHMM matrix-visualize -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt
 The default output files will be two png files. 
 
 ```
-View the Mark_state matrix and define no histone mark HMM states as background state (e.g. in example_files/Mark_state.png, 8 and 12 is background states).
-
+View the Mark_state matrix and define no histone mark HMM states as background state. 
+(e.g. in example_files/Mark_state.png, 8 and 12 is background states)
 ```
 
 ### **Step5**
+
+NucHMM screen initialization.
+
+Note the order of -ct parameter should be same with the cell type order in histonelists_list.txt
 ```
-NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt 
+NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt \
+-bg <background state1> -bg <background state2> .. -bg <background stateN> \
+-gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
+-ct <celltype1> -ct <celltype2> .. -ct <celltypeN> -ptm -rmf
 ```
 
 
