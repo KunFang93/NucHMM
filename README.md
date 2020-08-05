@@ -183,7 +183,7 @@ Nuc_pos_vio.png, Regularity_score_filt.png, State_Spectral_density_filt.png, Arr
 The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
 The final kept nucleosomes are in < celltypes >_gl_an_resp_pos_filt.bed.   
 
-Enjoy the result:blush:!
+Enjoy :blush:!
 
 ## Command Line
 
@@ -206,13 +206,13 @@ Commands:
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
  * ### Options
-   * `--version:`              Show NucHMM current version and exit.
-   * `--hmm-directory PATH:`   Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
-   * `--help:`                 Show help message.
+   * `--version`:              Show NucHMM current version and exit.
+   * `--hmm-directory PATH`:   Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
+   * `--help`:                 Show help message.
  * ### Commands
    * #### nuchmm-prep
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for MNase-seq, we only accept result from iNPS currently.
-     * `--fastq/--bam`: Input data type
+     * `--fastq/--bam`:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Input data type
      * `--inputfqslist(-ifql)`
      * `--inputbamslist(-ibl)`
      * `--qualitycontrol(-qc)`
