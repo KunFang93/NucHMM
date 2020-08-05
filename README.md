@@ -185,7 +185,7 @@ The final kept nucleosomes are in < celltypes >_gl_an_resp_pos_filt.bed
 
 ## Command Line
 
-### Usage
+* ### Usage
 
 ```
 NucHMM [OPTIONS] COMMAND [ARGS]
