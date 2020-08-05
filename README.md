@@ -252,7 +252,7 @@ Commands:
      Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
      
      * `--outputfilelist(-ofl)`:  
-     Specify the output files path and name. 
+     Specify the output files path and name.   
      Format:   
      < Path >/< celltype1 >.precomp   
      < Path >/< celltype2 >.precomp   
@@ -260,13 +260,13 @@ Commands:
      < Path >/< celltypeN >.precomp
      
      * `--refgenome(-refg)`:  
-     
+     The reference genome file contains the length of each chromosomes. Default: built-in hg19.
      
      * `--intersect_cutoff(-ic)`:  
      The intersect threshold to assign histone mark peaks to the nucleosomes. Default is 0.3. For example, for a 150 bp nucleosome core region, if a histone mark peak have 45 (150 * 0.3) bp overlap with this nucleosome. Then the program will consider this nucleosome has this histone mark.
      
      * `--gap(-g)`:  
-     Flag of give a mark to inter-nucleosome region (gaps between nucleosomes). Default: False.
+     Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes). 
      
      * `--upboundary(-up)`:  
      Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
@@ -274,8 +274,52 @@ Commands:
      * `--downboundary(-down)`:    
      Downstream boundary of TTS for selecting the training region. Default:10000. The larger the number, the more computational resources (memory) and training time needed.
      
-     * `--removetmpfile(-rmf)`:  
+     * `--removetmpfile(-rmf)`: 
+     Flag of removing all temporary files.
+     
    * #### nuchmm-train
+   
+     Use Hidden Markov Model(HMM) and Viterbi Algorithm to decode HMM states for each nucleosomes. 
+     
+     * `--refgenome(-refg)`[Required]:  
+     Input the reference genome file that contains the length of each chromosomes. Check the hg19.chrom.sizes.txt in annotation_files folder.
+     
+     * `--precomp_list(-pl)`[Required]:  
+     Input precomp files list resulted from nuchmm-init. Check the precompfiles_list.txt in example_files folder.
+     
+     * `--numhistonemarks(-numh)`[Required]:  
+     The number of histone marks used. For example, if user use H3K4me1/K4me3/K27ac in nuchmm-init, then input 3. 
+     
+     * `--numStates(-nums)`:  
+     The number of states for first round hmm training. Default: 20.
+     
+     * `-b`:  
+     Calculate and report BIC after every iteration. WARNING: This parameter will severely slow the algorithm!
+     
+     * `--bicfile(-obic)`:  
+     Specify the path and name of the BIC score file. If -b not specified, only report BIC score of the first and the last iteration.
+     
+     * `-i`:  
+     Maximum number of iterations for first round hmm training. Default: 300.
+     
+     * `--num/--perc`:  
+     The crietrion to remove the redundant states in the first round hmm training. `--num` uses the specific number as cutoff while `--perc` uses a specific percentage as cutoff. Default use is --perc (0.005). If specify --num, then default number is 350. For example, --num -nn 300 function as: if a HMM state has less than 300 nucleosomes in the first round hmm training, then this HMM state will be removed from the tranisition and emission matrix which are used as the initial matrix in the second round HMM. --perc -pn 0.01 function as: if a HMM state has less than 0.01% of the total number of nucleosomes, then this HMM will be removed from the tranisition and emission matrix which are used as the initial matrix in the second round HMM.
+     
+     * `--nucnum(-nn)`:  
+     Used with --num to specify the number cutoff.
+     
+     * `--percentage(-pn)`:
+     Used with --perc to specify the percentage cutoff.
+     
+     * `--outrawhmmfile(-ohmm)`:  
+     Specify the path and name of the output rawhmm file.
+     
+     * `--outstats(-os)`:  
+     Output the nucleosome counts for each HMM states in each cell type.
+     
+     * `--removetmpfile(-rmf)`:  
+     Remove temporary files.
+   
    * #### nuchmm-screen-init
    * #### nuchmm-screen
    * #### matrix-visualize
