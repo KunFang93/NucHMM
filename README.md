@@ -242,13 +242,13 @@ Commands:
   
      Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt.
    
-     * `--inputpeakslistfiles(-iplf)`[Required]:  
+     * `--inputpeakslistfiles(-iplf)`[**Required**]:  
      Input TF-peaks_files list. Check the histonelists_list.txt in example_files folder for the detailed format.
      
-     * `--nucpositionfiles(-nucf)`[Required]:  
+     * `--nucpositionfiles(-nucf)`[**Required**]:  
      Input the nucleosome position files list. Check the nucposfiles_list.txt in example_files folder for the detailed format.
      
-     * `--genefile(-gf)`[Required]:  
+     * `--genefile(-gf)`[**Required**]:  
      Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
      
      * `--outputfilelist(-ofl)`:  
@@ -284,10 +284,10 @@ Commands:
      * `--refgenome(-refg)`[**Required**]:  
      Input the reference genome file that contains the length of each chromosomes. Check the hg19.chrom.sizes.txt in annotation_files folder.
      
-     * `--precomp_list(-pl)`[Required]:  
+     * `--precomp_list(-pl)`[**Required**]:  
      Input precomp files list resulted from nuchmm-init. Check the precompfiles_list.txt in example_files folder.
      
-     * `--numhistonemarks(-numh)`[Required]:  
+     * `--numhistonemarks(-numh)`[**Required**]:  
      The number of histone marks used. For example, if user use H3K4me1/K4me3/K27ac in nuchmm-init, then input 3. 
      
      * `--numStates(-nums)`:  
@@ -324,8 +324,73 @@ Commands:
      
      Initializae the screen step by providing sorted state files and the suggested genomic locations of HMM states.
      
-     * `--rawhmmfile(-rhf)`[**Required**]
+     * `--rawhmmfile(-rhf)`[**Required**]:  
+     Input the secondr.rawhmm file resulted from nuchmm-train.
+     
+     * `--histonelistfile(-hlf)`[**Required**]:
+     Input histone_marks.txt file that contains all histone marks used in nuchmm-init. Check the histone_marks.txt for the detail format.
+     
+     * `--genesfile(-gf)`[**Required**]:
+     Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
+     
+     * `--celltypes(-ct)`[**Required**]: 
+     Input all cell types name used in nuchmm-init. For example, if user train model with data from MCF7, H1 and IMR90, user should input -ct MCF7 -ct H1 -ct IMR90. The order of the -ct should be the same with the celltype order in nucposfiles_list.txt.
+     
+     * `--bgstate(-bg)`[**Required if exists background states**]:  
+     Specify background states that identified from the Mark-state matrix. If there are multiple background states, for example HMM state1 and HMM state2 are background states, then use -bg 1 -bg 2. 
+     
+     * `--statesfilelist(-sfl)`:  
+     Specify the path and name of the output < celltype > _states_secondr.bed. The order of the < celltype > should be same with -ct command. The command will detect the states_secondr.bed in current directory automatically. If user want to run command in the background, this parameter is required.  
+     format:  
+     < celltype1 > _states_secondr.bed  
+     ..  
+     < celltypeN > _states_secondr.bed  
+     
+     * `--outputsfilelist(-ofl)`:
+     Specify the path and name of the output < celltype > _output_secondr.bed. The order of the < celltype > should be same with -ct command. The command will detect the output_secondr.bed in current directory automatically. If user want to run command in the background, this parameter is required.  
+     format:  
+     < celltype1 > _output_secondr.bed  
+     ..  
+     < celltypeN > _output_secondr.bed  
+     
+     * `--plotcellmark(-pcm)`:  
+     Plot the cell type specific HMM states distribution. 
+     
+     * `--plottotalmark(-ptm)`:  
+     Plot the all cell averaged HMM states distribution. 
+     
+     * `--overwrite(-ow)`:  
+     Overwrite all existing files. Useful when user need to re-run command in the same directory.
+     
+     * `--winmethod/--refmethod`:  
+     Pick a method to identify unique HMM state for the nucleosomes that have multi-states. `--winmethod` uses window method to identify the unique state; `--refmethod` uses output_secondr.bed as reference to identify the unique state. Default method: `--refmethod`. See the *pick_one* function in NucHMM_Feature_screen for the detailed inplementation.
+     
+     * `--winsize(-ws)`:  
+     Used with `--winmethod`, Default value: 5. Window method use the adjcent nucleosome states in the selected window to identify the unique state for the target nucleosome. For example, if a nucleosome has both HMM state1(associated with H3K4me1) and HMM state2(associated with H3K4me3) labelled, we then select the upstream < 5 > nucleosomes and downstream < 5 > nucleosomes of this target nucleosome to find which HMM state is most likely appeared under this environment. See the *pick_one* function in NucHMM_Feature_screen for the detailed inplementation.
+     
+     * `--updistal(-uD)`:  
+     Specify upstream boundary for plotting the distribution, cannot exceed than `--upboundary` used in nuchmm-init. Default: 100000.
+     
+     * `--uppromoter(-uProm)`:  
+     Specify upstream boundary of the promoter region. Used in identifying the genomic location of HMM states. Default: 1000.
+     
+     * `--downbound(-db)`: 
+     Specify downstream boundary for plotting the distribution, cannot exceed than `--downboundary` used in nuchmm-init. Default: 10000.
+     
+     * `--rescalelength(-rl)`:  
+     Specify the rescaled gene body length. Default: 30000.
+     
+     * `--refhg19/--refhg38`:  
+     Specify the reference genome. Default: built-in hg19.
+     
+     * `--outfile(-of)`:  
+     Specify the path and name of the identified genomic location file.
+     
+     * `--removetmpfile(-rmf)`:  
+     Remove temporary files.
+     
    * #### nuchmm-screen
+   
    * #### matrix-visualize
 
 
