@@ -138,7 +138,7 @@ View the Mark_state matrix and define no histone mark HMM states as background s
 ### **Step5: NucHMM screen initialization.**
 
 
-Note the order of -ct parameter should be same with the cell type order in histonelists_list.txt
+Note the order of parameter should be same with the cell type order in histonelists_list.txt
 ```
 NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt \
 -bg <background state1> -bg <background state2> .. -bg <background stateN> \
@@ -371,6 +371,9 @@ Commands:
      * `--updistal(-uD)`:  
      Specify upstream boundary for plotting the distribution, cannot exceed than `--upboundary` used in nuchmm-init. Default: 100000.
      
+     * `--upproximal(-uProx)`:  
+     Specify upstream boundary of the proximal region. Used in identifying the genomic location of HMM states. Default: 5000.
+     
      * `--uppromoter(-uProm)`:  
      Specify upstream boundary of the promoter region. Used in identifying the genomic location of HMM states. Default: 1000.
      
@@ -390,7 +393,69 @@ Commands:
      Remove temporary files.
      
    * #### nuchmm-screen
-   
+     
+     Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning.
+     
+     * `--genesfile(-gf)`[**Required**]:  
+     Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
+     
+     * `--like_wig_fileslist(-lwfl)`[**Required**]:  
+     Input the like_wigs_list.txt that contains < celltype > _like_wigs.txt. Check the like_wig_list.txt in example_files folder for the detail format and information. The order of the cell types should be the same with the celltype order in nucposfiles_list.txt.
+     
+     * `--nucpositionfiles(-nucf)`[**Required**]:  
+     Input the nucleosome position files list. Check the nucposfiles_list.txt in example_files folder for the detailed format.
+     
+     * `--statesnumber(-sn)`[**Required**]:  
+     Input the total number of HMM states (Include background states.)
+     
+     * `--bgstate(-bg)`[**Required if exists background states**]:  
+     Specify background states that identified from the Mark-state matrix. If there are multiple background states, for example HMM state1 and HMM state2 are background states, then use -bg 1 -bg 2.
+     
+     * `--inputfileslist(-ifl)`:  
+     Input the list of files resulted from nuchmm-screen-init. Check nuchmm_screen_init_result_files.txt in example_files folder for the detailed information. The program will automatically look for the nuchmm_screen_init_result_files.txt in current directory.
+     
+     * `--statesregionfile(-srf)`:  
+     Input the states_genomic_location.txt (contains the predicted genomic location for each non background HMM states) resulted from nuchmm-screen-init. Check states_genomic_location.txt in example_files folder for the detailed information. The program will automatically look for the states_genomic_location.txt in current directory. 
+     
+     * `--updistal(-uD)`:  
+     Specify upstream boundary for genomic location filtering, cannot exceed than `--upboundary` used in nuchmm-init. Default: 100000.
+     
+     * `--upproximal(-uProx)`:  
+     Specify upstream boundary of the proximal region for genomic location filtering. Default: 5000.
+     
+     * `--uppromoter(-uProm)`:  
+     Specify upstream boundary of the promoter region for genomic location filtering. Default: 1000.
+     
+     * `--cutoffdist(-cfd)`: 
+     Specify the maximum distance between two nucleosomes in a nucleosome array. If the distance between two nucleosome larger than this cutoff distance, the program will consider these two nucleosomes are in different nucleosome arrays. Default: 350.
+     
+     * `--upratio(-ur)`:  
+     Specify the top quantile cutoff in array-num and nucleosome positioning filtering process. Default: 95.
+     
+     * `--downratio(-dr)`:  
+     Specify the bottom quantile cutoff in array-num and nucleosoem positioning filtering process. Default: 5. 
+     
+     * `--arraydown(-adwon)`:  
+     Specify the range of the nucleosome array for calculating nucleosoem regularity and spacing. Currently only accept 1000 and 2000 as input. Default: 1000.
+     
+     * `--max/--mean`:  
+     Specify the criterion to calculate the regularity score. `--max` method chooses the max spectral density between 150-200 bp as the regularity score. `--mean` method calculate the average of teh spectral density between 150-200 bp as the regularity score.  
+     
+     * `--rankcoef(-rc)`:  
+     Specify the cofficient of the regularity rank for filtering unmatched nucleosome. The larger the coefficient, the looser the filter. Default: 10.
+     
+     * `--refhg19/--refhg38`:  
+     Specify the reference genome. Default: built-in hg19.
+     
+     * `--writeinfo(-wi)`: 
+     Write files contain the detail array-num, nucleosome regularity, spacing and positioning information.
+     
+     * `--plotmark(-pm)`:  
+     Plot mark for ploting state-array distribution, bar-plot of regularity score, spectral-density plot and nuc-pos violin plot.
+     
+     * `--removetmpfile(-rmf)`:  
+     Remove temporary files.
+     
    * #### matrix-visualize
 
 
