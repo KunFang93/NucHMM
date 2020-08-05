@@ -327,33 +327,33 @@ Commands:
      * `--rawhmmfile(-rhf)`[**Required**]:  
      Input the secondr.rawhmm file resulted from nuchmm-train.
      
-     * `--histonelistfile(-hlf)`[**Required**]:
+     * `--histonelistfile(-hlf)`[**Required**]:  
      Input histone_marks.txt file that contains all histone marks used in nuchmm-init. Check the histone_marks.txt for the detail format.
      
-     * `--genesfile(-gf)`[**Required**]:
+     * `--genesfile(-gf)`[**Required**]:  
      Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
      
-     * `--celltypes(-ct)`[**Required**]: 
+     * `--celltypes(-ct)`[**Required**]:   
      Input all cell types name used in nuchmm-init. For example, if user train model with data from MCF7, H1 and IMR90, user should input -ct MCF7 -ct H1 -ct IMR90. The order of the -ct should be the same with the celltype order in nucposfiles_list.txt.
      
      * `--bgstate(-bg)`[**Required if exists background states**]:  
      Specify background states that identified from the Mark-state matrix. If there are multiple background states, for example HMM state1 and HMM state2 are background states, then use -bg 1 -bg 2. 
      
-     * `--statesfilelist(-sfl)`:  
+     * `--statesfilelist(-sfl)`:    
      Specify the path and name of the output < celltype > _states_secondr.bed. The order of the < celltype > should be same with -ct command. The command will detect the states_secondr.bed in current directory automatically. If user want to run command in the background, this parameter is required.  
      format:  
      < celltype1 > _states_secondr.bed  
      ..  
      < celltypeN > _states_secondr.bed  
      
-     * `--outputsfilelist(-ofl)`:
+     * `--outputsfilelist(-ofl)`:  
      Specify the path and name of the output < celltype > _output_secondr.bed. The order of the < celltype > should be same with -ct command. The command will detect the output_secondr.bed in current directory automatically. If user want to run command in the background, this parameter is required.  
      format:  
      < celltype1 > _output_secondr.bed  
      ..  
      < celltypeN > _output_secondr.bed  
      
-     * `--plotcellmark(-pcm)`:  
+     * `--plotcellmark(-pcm)`:    
      Plot the cell type specific HMM states distribution. 
      
      * `--plottotalmark(-ptm)`:  
