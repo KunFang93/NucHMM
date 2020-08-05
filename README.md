@@ -206,9 +206,12 @@ Commands:
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
  * ### Options
-   * `--version`:&nbsp;&nbsp;&nbsp;&nbsp;Show NucHMM current version and exit.
-   * `--hmm-directory PATH`:&nbsp;&nbsp;&nbsp;&nbsp;Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
-   * `--help`:&nbsp;&nbsp;&nbsp;&nbsp;Show help message.
+   * `--version`:
+   Show NucHMM current version and exit.
+   * `--hmm-directory PATH`:
+   Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
+   * `--help`:
+   Show help message.
  * ### Commands
    * #### nuchmm-prep
    
