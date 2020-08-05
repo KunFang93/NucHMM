@@ -243,8 +243,9 @@ Commands:
      * `--threads(-p)`:  
      Number of threads
      
-   * #### nuchmm-init
-   
+  * #### nuchmm-init
+   Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt
+     * `--inputpeakslistfiles(-iplf)`:
    
    * #### nuchmm-train
    * #### nuchmm-screen-init
