@@ -208,22 +208,40 @@ Commands:
  * ### Options
    * `--version`:  
    Show NucHMM current version and exit.
+   
    * `--hmm-directory PATH`:  
    Used in nuchmm-train for input the path of the NucHMM_Cplus/bin folder.
+   
    * `--help`:  
    Show help message.
+   
  * ### Commands
    * #### nuchmm-prep
    
      NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for MNase-seq, we only accept result from iNPS currently.
-     * `--fastq/--bam`:&nbsp;&nbsp;&nbsp;&nbsp;Indicate the input data type
-     * `--inputfqslist(-ifql)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --fastq command. Input the fastqs list file. Input format: 'FILE READ-LEN SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check fqs_list.txt in example_files folder for the detailed format.
-     * `--inputbamslist(-ibl)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --bam command. Input the bams list. Input format: for each line 'FILE PE?SE SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check bams_list.txt in example_files folder for the detailed format.
-     * `--qualitycontrol(-qc)`:&nbsp;&nbsp;&nbsp;&nbsp;Used with --fastq command. Flag for whether run QC trim step for fastq files.
-     * `--bowtieindexpath(-bip)`:&nbsp;&nbsp;&nbsp;&nbsp;Required if input format is fastq, the path and basename of bowtie index (bowtie -x)
-     * `--bowtie2indexpath(-b2ip):`&nbsp;&nbsp;&nbsp;&nbsp;Required if input format is fastq, the path and basename of bowtie2 index (bowtie2 -x)
-     * `--inpspath(-inps)`:&nbsp;&nbsp;&nbsp;&nbsp;Required if input has MNase-seq, the path of iNPS.py. For example, /data/NucHMM/scripts/iNPS_V1.2.2.py.
-     * `--threads(-p)`:&nbsp;&nbsp;&nbsp;&nbsp;Number of threads
+     * `--fastq/--bam`:    
+     Indicate the input data type
+     
+     * `--inputfqslist(-ifql)`:  
+     Used with --fastq command. Input the fastqs list file. Input format: 'FILE READ-LEN SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check fqs_list.txt in example_files folder for the detailed format.
+     
+     * `--inputbamslist(-ibl)`:  
+     Used with --bam command. Input the bams list. Input format: for each line 'FILE PE?SE SEQ-TYPE(chip/mnase) PEAK-TYPE(narrow?broad/none)'. Check bams_list.txt in example_files folder for the detailed format.
+     
+     * `--qualitycontrol(-qc)`:  
+     Used with --fastq command. Flag for whether run QC trim step for fastq files.
+     
+     * `--bowtieindexpath(-bip)`:  
+     Required if input format is fastq, the path and basename of bowtie index (bowtie -x)
+     
+     * `--bowtie2indexpath(-b2ip)`:  
+     Required if input format is fastq, the path and basename of bowtie2 index (bowtie2 -x)
+     
+     * `--inpspath(-inps)`:  
+     Required if input has MNase-seq, the path of iNPS.py. For example, /data/NucHMM/scripts/iNPS_V1.2.2.py.
+     
+     * `--threads(-p)`:  
+     Number of threads
      
    * #### nuchmm-init
    
