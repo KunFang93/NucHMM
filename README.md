@@ -81,7 +81,7 @@ First manually create
 # Check the those files format in exmaple_files folder.
 1. <celltype>_histone_marks.txt that contains all histone mark peak files;
 2. histonelists_list.txt contains all <celltype>_histone_marks.txt file;
-3. nucposfile_list.txt contains all <celltype>_nucleosome_locations.bed.
+3. nucposfiles_list.txt contains all <celltype>_nucleosome_locations.bed.
 ```
 
 Then, use command
@@ -162,14 +162,8 @@ If not, you can manually edit the states_genomic_location.txt file.
 
 Then,
 ```
-Maunally create nucdetaillist.txt, <celltype>_like_wig.txt and like_wigs_list.txt
-(check the file format in exmaple_files/nucdetaillist.txt, example_files/<celltype>_like_wigs.txt and like_wig_files.txt)
-```
-
-Finally,
-```
 NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
--lwfl like_wigs_list.txt -ndfl nucdetaillist.txt -bg <background state1> .. -bg <background stateN> \
+-lwfl like_wigs_list.txt -nucf nucposfiles_list.txt -bg <background state1> .. -bg <background stateN> \
 -sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -rmf
 ```
 
@@ -244,12 +238,29 @@ Commands:
      * `--threads(-p)`:  
      Number of threads
      
-  * #### nuchmm-init
+   * #### nuchmm-init
   
-   Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt.
+     Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name are writing to Precompfiles_list.txt.
    
-     * `--inputpeakslistfiles(-iplf)`:
-   
+     * `--inputpeakslistfiles(-iplf)`[Required]:  
+     Input TF-peaks_files list. Check the histonelists_list.txt in example_files folder for the detailed format.
+     
+     * `--nucpositionfiles(-nucf)`:  
+     Input the nucleosome position files list. Check the nucposfiles_list.txt in example_files folder for the detailed format.
+     
+     * `--genefile(-gf)`:  
+     Input the interested genes list file. Check the genebody_anno_hg19.txt in annotation_files for the detailed format.
+     
+     * `--intersect_cutoff(-ic)`:  
+     The intersect threshold to assign histone mark peaks to the nucleosomes. Default is 0.3. For example, for a 150 bp nucleosome core region, if a histone mark peak have 45 (150 * 0.3) bp overlap with this nucleosome. Then the program will consider this nucleosome has this histone mark.
+     
+     * `--gap(-g)`:
+     
+     * `--upboundary(-up)`:
+     * `--downboundary(-down)`:
+     * `--outputfilelist(-ofl)`:
+     * `--refgenome(-refg)`:
+     * `--removetmpfile(-rmf)`:
    * #### nuchmm-train
    * #### nuchmm-screen-init
    * #### nuchmm-screen
