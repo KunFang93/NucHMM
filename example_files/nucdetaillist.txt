@@ -1,3 +1,4 @@
+## contain all cell types iNPS result, the order of the cell type should be same with 
 <Full Path>/<celltype1>_nucleosome_location.bed
 <Full Path>/<celltype2>_nucleosome_location.bed
 <Full Path>/<celltype3>_nucleosome_location.bed
