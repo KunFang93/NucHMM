@@ -203,14 +203,14 @@ Commands:
   nuchmm-screen           Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning.
   matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
- ### Options
- ### Commands
-  #### nuchmm-prep
-  #### nuchmm-init
-  #### nuchmm-train
-  #### nuchmm-screen-init
-  #### nuchmm-screen
-  #### matrix-visualize
+ * ### Options
+ * ### Commands
+  * #### nuchmm-prep
+  * #### nuchmm-init
+  * #### nuchmm-train
+  * #### nuchmm-screen-init
+  * #### nuchmm-screen
+  * #### matrix-visualize
 
 
 NucHMM provides basic ChIP-seq and MNase-seq pipeline to handle the fastq/bam files. If you have other favored ChIP-seq pipeline, we recommend use your favored way to process the raw fastq or bam files. However, for
