@@ -63,7 +63,7 @@ Commands:
   nuchmm-train            Use Hidden Markov Model(HMM) and Viterbi Algorithm to decode HMM states for each nucleosomes.
   nuchmm-screen-init      Initializae the screen step by providing sorted state files and the suggested genomic locations of HMM states.
   nuchmm-screen           Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning.
-  hmm-visualize           Visualize the Transition and Mark-state matrix.
+  matrix-visualize        Visualize the Transition and Mark-state matrix.
 ```
 
 ## Quick Start
@@ -89,15 +89,16 @@ NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt
 # include MNase-seq bam
 NucHMM nuchmm-prep --bam -p 20 -ibl bam.txt -inps <Full Path to iNPS.py>
 ```
-The output peak files will locate at **<current dir>/peakcalling_result**, and the output nucleosome location files will locate at **<current dir>/nuc_calling_reuslt**.
+The output peak files will locate at **peakcalling_result/ folder**, and the output nucleosome location files will locate at **nuc_calling_result/ folder**.
 
 ### **Step2**: 
 
 First manually create 
 ```
+# Check the those files format in exmaple_files folder.
 1. <celltype>_histone_marks.txt file that contains all histone mark peak files;
-2. histonelists_list.txt contains all <celltype>_histone_marks.txt file (Check the those files format in exmaple_files folder);
-3. nucposfile_list.txt contains all <celltype>_nucleosome_locations.bed
+2. histonelists_list.txt contains all <celltype>_histone_marks.txt file;
+3. nucposfile_list.txt contains all <celltype>_nucleosome_locations.bed.
 ```
 
 Then, use command
@@ -105,7 +106,45 @@ Then, use command
 NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Full Path>/annotation/genebody_anno.txt -rmf
 ```
 
+The default output file will be named <celltype>_<# histone mark>.precomp in the current directory. User can specify the ouptut name by -ofl parameter.  
+  
+### **Step3**
 
+First manually create.  
+```
+__precompfiles_list.txt__ that contains all precomp files result from nuchmm-init.
+```
+Then, 
+
+```
+NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -rmf
+
+# Note that training process could take few hours up to a day depends on how much data you input. We normally use nohup command to run the this nuchmm-train command in the background by
+nohup NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -rmf &> train.log &
+```
+
+The default output file will be name HMM_<# histone marks>.rawhmm in the current directory. User can specify the output name by -ohmm parameter.
+
+### **Step4**
+
+Manually create __histone_marks.txt__ file that contains all histone marks (check the file format in example_files folder).  
+
+Then, visualize the Transition and Mark-state matrix first.
+```
+NucHMM matrix-visualize -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt
+```
+
+The default output files will be two png files. 
+
+```
+View the Mark_state matrix and define no histone mark HMM states as background state (e.g. in example_files/Mark_state.png, 8 and 12 is background states).
+
+```
+
+### **Step5**
+```
+NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt 
+```
 
 
 
