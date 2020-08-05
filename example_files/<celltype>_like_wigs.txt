@@ -1,4 +1,5 @@
 ## e.g. /NucHMM_project/NucHMM_data/MCF7/Like-wig/MCF7_chr11.like_wig
+## should contain all chromosomes' like_wig
 <Full Path>/<celltype>_chr10.like_wig
 <Full Path>/<celltype>_chr11.like_wig
 <Full Path>/<celltype>_chr12.like_wig
