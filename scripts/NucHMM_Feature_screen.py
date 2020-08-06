@@ -229,6 +229,9 @@ def select_unique_state(rawhmmfile, histonelistfile, statefile, outputfile, filt
                 else:
                     reffile = input_new_name('The name and path of the output reference file:')
                     ref_diction = load_output_file(reffile)
+            else:
+                reffile = input_new_name('The name and path of the output reference file:')
+                ref_diction = load_output_file(reffile)
         else:
             ref_diction = load_output_file(outputfile)
 
