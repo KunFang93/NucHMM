@@ -214,11 +214,11 @@ def file2dict(mappedfilelist, interval_other_area, samplepoints, up_boundary, do
 
         # normalize by total gene number
         States_x[state] = (np.array(States_x[state]) / totalgenenum * 100)
-    #     State_total += States_x[state]
-    #
-    #     # print(State_total)
-    # # switch to frequence
-    # for state in States_x:
-    #     States_x[state] = States_x[state] / State_total * 100
+        State_total += States_x[state]
+    
+        # print(State_total)
+    # switch to frequence
+    for state in States_x:
+        States_x[state] = States_x[state] / State_total * 100
     print('Transfering Finish!')
     return States_x
