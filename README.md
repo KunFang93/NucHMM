@@ -457,7 +457,27 @@ Commands:
      Remove temporary files.
      
    * #### matrix-visualize
-
-
-
-
+       
+     Visualize the Transition and Mark-state matrix.
+     
+     * `--rawhmmfile(-rhf)`[**Required**]:  
+     Input the secondr.rawhmm file resulted from nuchmm-train.
+     
+     * `--histonelistfile(-hlf)`[**Required**]:  
+     Input histone_marks.txt file that contains all histone marks used in nuchmm-init. Check the histone_marks.txt for the detail format.
+      
+     * `--matrixcolor(-mc)`:  
+     Specify the color palette of the matrix. 0 is red-white; 1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.
+     
+     * `--transmat(-tmat)`:  
+     Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png
+     
+     * `--markstatemat(-msmat)`:  
+     Specify the path and name of the mark-state matrix, otherwise will automatically save to mark_state.< current time >.png
+     
+     * `--M`:  
+     Divide the element of emission probability matrix by the number of the mark in that observation. Very strong assumption. Not recommend use. 
+     
+     * `--writematrix`:  
+     Write mark_state matrix and transistion probability matrix in txt files.
+     
