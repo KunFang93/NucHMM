@@ -424,7 +424,7 @@ def identify_genomic_location(States_x_total,state4write,genome_region_index,His
                 final_identified_dict[state].append(region)
 
     # final modifications for the dictionary
-    print(final_identified_dict)
+    # print(final_identified_dict)
     max_keep_regions = 3
     for state in final_identified_dict:
         # the max number of a region should be 3, keep the top1 rank regions
