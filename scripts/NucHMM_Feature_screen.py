@@ -405,13 +405,13 @@ def identify_genomic_location(States_x_total,state4write,genome_region_index,His
         for region_rank in rank_identfied_dict[state]:
             # if exist at both dictionary
             if region_rank.split('_')[0] in empirical_dict[state]:
-                print('1',region_rank)
+                # print('1',region_rank)
                 final_identified_dict[state].append(region_rank)
                 empirical_mark += 1
             else:
                 # rank top 2 can be added
                 if int(region_rank.split('_')[1]) <= 2:
-                    print('2',region_rank)
+                    # print('2',region_rank)
                     final_identified_dict[state].append(region_rank)
         if empirical_mark == 0:
             state_need_ref.append(state)
@@ -420,7 +420,7 @@ def identify_genomic_location(States_x_total,state4write,genome_region_index,His
         for region in empirical_dict[state]:
             if region not in final_identified_dict[state]:
                 # avoid overlap region
-                print('3',region)
+                # print('3',region)
                 final_identified_dict[state].append(region)
 
     # final modifications for the dictionary
