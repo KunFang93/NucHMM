@@ -475,6 +475,9 @@ Commands:
      * `--markstatemat(-msmat)`:  
      Specify the path and name of the mark-state matrix, otherwise will automatically save to mark_state.< current time >.png
      
+     * `--emitmat(-emat)`,:
+     Specify the path and name of the emission probability matrx. Default: None.
+     
      * `--M`:  
      Divide the element of emission probability matrix by the number of the mark in that observation. Very strong assumption. Not recommend use. 
      
