@@ -96,7 +96,7 @@ class Config(object):
 pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group(cls=SpecialHelpOrder)
 @click.version_option(version=1.0)
-@click.option('--hmm-directory', type=click.Path(),help='the path of NucHMM_Model bin')
+@click.option('--hmm-directory', type=click.Path(),help='the path of NucHMM_Cplus bin')
 @pass_config
 def cli(config, hmm_directory):
     if hmm_directory is None:
