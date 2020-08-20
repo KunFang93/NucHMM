@@ -484,3 +484,5 @@ Commands:
      * `--writematrix`:  
      Write mark_state matrix and transistion probability matrix in txt files.
      
+## Contact Us
+Kun Fang: fangk@livemail.uthscsa.edu; Victor Jin: jinv@uthscsa.edu
