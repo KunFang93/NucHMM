@@ -261,6 +261,7 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
                    'will slow the algorithm a lot!')
 @click.option('--bicfile', '-obic', type=click.Path(),help='BIC score file, if -b not specified, only report first and '
                                                            'last BIC score')
+@click.option('--initmatrix', '-im', type=click.Path(exists=True), help='Use a pre-trained matrix as initial matrix.')
 @click.option('-i', default=300, help='Maximum number of iterations for first round hmm training')
 
 @click.option('--num/--perc',default=False,help='Two methods to remove the redundant states, recommended method is '
@@ -273,17 +274,23 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
 @click.option('--removetmpfile','-rmf',is_flag=True,help='Remove temporary files')
 @pass_config
 def NucHMM_train(config, numhist, refgenome, b, i, numstates, precomp_list, num, nucnum, percentage, outstats,
-                    outrawhmmfile, bicfile, removetmpfile):
+                    outrawhmmfile, bicfile, initmatrix, removetmpfile):
     '''Use Hidden Markov Model and Viterbi algorithm to decode HMM state for each nucleosomes'''
 
     # check if NucHMM-learn etc in directory
-
-    # number of outputs is 2 ** number of histone modifications
-    numoutputs = 2 ** numhist
+    command_list = ['NucHMM-learn', 'NucHMM-output_results']
+    for command in command_list:
+        file_abs_path = config.hmm_directory + '/' + command
+        if file_check(file_abs_path):
+            continue
+        else:
+            print(file_abs_path + " not exists!")
+            exit(1)
 
     # Read precompiles list file to a list
     precompilefiles_list = load_histonefile(precomp_list)
 
+    # create chromosome-bin file
     binoutfile = 'binnum.txt'
     if file_check(binoutfile):
         query_mark0 = query_yes_no(binoutfile + ' exists, do you want to overwrite it?')
@@ -295,100 +302,137 @@ def NucHMM_train(config, numhist, refgenome, b, i, numstates, precomp_list, num,
         print("Creating %s." % binoutfile)
         write_binnum_file(precompilefiles_list[0],binoutfile)
 
-    # First round hmm training
-    rawhmm_file = 'HMM_' + str(numhist) +'.rawhmm'
-    bic_file_1 = 'bicfile_1' + get_time() + '.txt'
-    if file_check(rawhmm_file):
-        query_mark = query_yes_no(rawhmm_file + ' exists, do you want to overwrite it?')
-        if query_mark:
-            print("First round HMM training..")
-            hmm(config, refgenome, rawhmm_file, b, i, numstates, numoutputs, precompilefiles_list, bic_file_1, binoutfile)
+    # if there is a initial matrix
+    if initmatrix is not None:
+        trans_matrix_modi,emit_matrix_modi,numstate_modi,numoutput_modi = load_rawhmm(initmatrix)
+        if outrawhmmfile is None:
+            out_rawhmm = 'HMM_'+str(numstate_modi)+'.rawhmm'
         else:
-            if query_yes_no('Do your want to write to a new name?'):
-                rawhmm_file = input_new_name('New name:')
+            out_rawhmm = outrawhmmfile
+
+        if bicfile is None:
+            bic_file = 'BIC' + get_time() +'.txt'
+        else:
+            bic_file = bicfile
+
+        hmm_second(config, refgenome, out_rawhmm, b, 200, numstate_modi, numoutput_modi, precompilefiles_list, bic_file,
+                   initmatrix, binoutfile)
+
+        # HMM calling
+        print("HMM Viterbi calling")
+        statefiles_list_second = []
+        for precompfile in precompilefiles_list:
+            celltype = precompfile.split('/')[-1].split('_')[0]
+            print("Viterbi calling state and output file for %s" % celltype)
+            state_outfile = celltype + '_states_i_secondr.bed'
+            statefiles_list_second.append(state_outfile)
+            output_outfile = celltype + '_output_i_secondr.bed'
+            if file_check(state_outfile) and file_check(output_outfile):
+                query_mark2 = query_yes_no("HMM model Viterbi calling %s file exist, do you want to overwrite it?"%celltype)
+                if query_mark2:
+                    hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm, binoutfile)
+                else:
+                    print("Use the exists calling files")
+            else:
+                hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm, binoutfile)
+    else:
+        # number of outputs is 2 ** number of histone modifications
+        numoutputs = 2 ** numhist
+
+        # First round hmm training
+        rawhmm_file = 'HMM_' + str(numhist) +'.rawhmm'
+        bic_file_1 = 'bicfile_1' + get_time() + '.txt'
+        if file_check(rawhmm_file):
+            query_mark = query_yes_no(rawhmm_file + ' exists, do you want to overwrite it?')
+            if query_mark:
                 print("First round HMM training..")
                 hmm(config, refgenome, rawhmm_file, b, i, numstates, numoutputs, precompilefiles_list, bic_file_1, binoutfile)
             else:
-                print("Use the exists %s." % rawhmm_file)
-    else:
-        print("First round HMM training..")
-        hmm(config, refgenome, rawhmm_file, b, i, numstates, numoutputs, precompilefiles_list, bic_file_1, binoutfile)
+                if query_yes_no('Do your want to write to a new name?'):
+                    rawhmm_file = input_new_name('New name:')
+                    print("First round HMM training..")
+                    hmm(config, refgenome, rawhmm_file, b, i, numstates, numoutputs, precompilefiles_list, bic_file_1, binoutfile)
+                else:
+                    print("Use the exists %s." % rawhmm_file)
+        else:
+            print("First round HMM training..")
+            hmm(config, refgenome, rawhmm_file, b, i, numstates, numoutputs, precompilefiles_list, bic_file_1, binoutfile)
 
 
-    # modify hmm according the number of nucleosomes
-    statefiles_list = []
-    outputfiles_list = []
-    for precompfile in precompilefiles_list:
-        celltype = precompfile.split('/')[-1].split('_')[0]
-        print("Viterbi calling state and output file for %s" % celltype)
-        state_outfile = celltype + '_states_firstr'  + '.bed'
-        statefiles_list.append(state_outfile)
-        output_outfile = celltype + '_output_firstr'  + '.bed'
-        outputfiles_list.append(output_outfile)
-        if file_check(state_outfile) and file_check(output_outfile):
-            query_mark2 = query_yes_no('First HMM model Viterbi calling files exist, do you want to overwrite them?')
-            if query_mark2:
+        # modify hmm according the number of nucleosomes
+        statefiles_list = []
+        outputfiles_list = []
+        for precompfile in precompilefiles_list:
+            celltype = precompfile.split('/')[-1].split('_')[0]
+            print("Viterbi calling state and output file for %s" % celltype)
+            state_outfile = celltype + '_states_firstr'  + '.bed'
+            statefiles_list.append(state_outfile)
+            output_outfile = celltype + '_output_firstr'  + '.bed'
+            outputfiles_list.append(output_outfile)
+            if file_check(state_outfile) and file_check(output_outfile):
+                query_mark2 = query_yes_no('First HMM model Viterbi calling files exist, do you want to overwrite them?')
+                if query_mark2:
+                    hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, rawhmm_file, binoutfile)
+                else:
+                    print("Use the exists calling files")
+            else:
                 hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, rawhmm_file, binoutfile)
-            else:
-                print("Use the exists calling files")
-        else:
-            hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, rawhmm_file, binoutfile)
 
-    print("Modifying rawhmm file")
-    modi_rawhmm = 'HMM_' + str(numhist) +'_modi.rawhmm'
-    if file_check(modi_rawhmm):
-        query_mark3 = query_yes_no('First HMM model Viterbi calling file exists, do you want to overwrite it?')
-        if query_mark3:
+        print("Modifying rawhmm file")
+        modi_rawhmm = 'HMM_' + str(numhist) +'_modi.rawhmm'
+        if file_check(modi_rawhmm):
+            query_mark3 = query_yes_no('First HMM model Viterbi calling file exists, do you want to overwrite it?')
+            if query_mark3:
+                modifyhmm(statefiles_list,rawhmm_file,modi_rawhmm,num,nucnum,percentage,outstats)
+            else:
+                print("Use the exist %s." % modi_rawhmm)
+        else:
             modifyhmm(statefiles_list,rawhmm_file,modi_rawhmm,num,nucnum,percentage,outstats)
+
+        if bicfile is None:
+            bic_file = 'BIC_second_run' + get_time() +'.txt'
         else:
-            print("Use the exist %s." % modi_rawhmm)
-    else:
-        modifyhmm(statefiles_list,rawhmm_file,modi_rawhmm,num,nucnum,percentage,outstats)
+            bic_file = bicfile
 
-    if bicfile is None:
-        bic_file = 'BIC_second_run' + get_time() +'.txt'
-    else:
-        bic_file = bicfile
+        trans_matrix_modi,emit_matrix_modi,numstate_modi,numoutput_modi = load_rawhmm(modi_rawhmm)
+        # second round HMM training, 200 iterations are enough for converging
+        print("Second round HMM training..")
+        if outrawhmmfile is None:
+            out_rawhmm = 'HMM_'+str(numhist)+'_secondr.rawhmm'
+        else:
+            out_rawhmm = outrawhmmfile
+        hmm_second(config, refgenome, out_rawhmm, b, 200, numstate_modi, numoutput_modi, precompilefiles_list, bic_file,
+                   modi_rawhmm, binoutfile)
 
-    trans_matrix_modi,emit_matrix_modi,numstate_modi,numoutput_modi = load_rawhmm(modi_rawhmm)
-    # second round HMM training, 200 iterations are enough for converging
-    print("Second round HMM training..")
-    if outrawhmmfile is None:
-        out_rawhmm = 'HMM_'+str(numhist)+'_secondr.rawhmm'
-    else:
-        out_rawhmm = outrawhmmfile
-    hmm_second(config, refgenome, out_rawhmm, b, 200, numstate_modi, numoutput_modi, precompilefiles_list, bic_file,
-               modi_rawhmm, binoutfile)
-
-    # second round HMM calling
-    print("Seconda round HMM Viterbi calling")
-    statefiles_list_second = []
-    for precompfile in precompilefiles_list:
-        celltype = precompfile.split('/')[-1].split('_')[0]
-        print("Viterbi calling state and output file for %s" % celltype)
-        state_outfile = celltype + '_states_secondr.bed'
-        statefiles_list_second.append(state_outfile)
-        output_outfile = celltype + '_output_secondr.bed'
-        if file_check(state_outfile) and file_check(output_outfile):
-            query_mark2 = query_yes_no("First HMM model Viterbi calling %s file exist, do you want to overwrite it?"%celltype)
-            if query_mark2:
-                hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm, binoutfile)
+        # second round HMM calling
+        print("Seconda round HMM Viterbi calling")
+        statefiles_list_second = []
+        for precompfile in precompilefiles_list:
+            celltype = precompfile.split('/')[-1].split('_')[0]
+            print("Viterbi calling state and output file for %s" % celltype)
+            state_outfile = celltype + '_states_secondr.bed'
+            statefiles_list_second.append(state_outfile)
+            output_outfile = celltype + '_output_secondr.bed'
+            if file_check(state_outfile) and file_check(output_outfile):
+                query_mark2 = query_yes_no("First HMM model Viterbi calling %s file exist, do you want to overwrite it?"%celltype)
+                if query_mark2:
+                    hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm, binoutfile)
+                else:
+                    print("Use the exists calling files")
             else:
-                print("Use the exists calling files")
-        else:
-            hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm,binoutfile)
+                hmm_calling(config, refgenome, state_outfile, output_outfile, precompfile, out_rawhmm,binoutfile)
 
-    print('States file: ' + ','.join(statefiles_list_second))
-    if removetmpfile:
-        subprocess.call("rm " + binoutfile, shell=True)
-        subprocess.call("rm " + rawhmm_file, shell=True)
-        subprocess.call("rm " + bic_file_1, shell=True)
-        for file in statefiles_list:
-            subprocess.call("rm " + file,shell=True)
-        for file in outputfiles_list:
-            subprocess.call("rm " + file, shell=True)
-        subprocess.call("rm " + modi_rawhmm, shell=True)
-    print('Nuchmm training Finish!')
+        print('States file: ' + ','.join(statefiles_list_second))
+        if removetmpfile:
+            subprocess.call("rm " + binoutfile, shell=True)
+            subprocess.call("rm " + rawhmm_file, shell=True)
+            subprocess.call("rm " + bic_file_1, shell=True)
+            for file in statefiles_list:
+                subprocess.call("rm " + file,shell=True)
+            for file in outputfiles_list:
+                subprocess.call("rm " + file, shell=True)
+            subprocess.call("rm " + modi_rawhmm, shell=True)
+        print('Nuchmm training Finish!')
 
 @cli.command(help_priority=4)
 @click.option('--rawhmmfile','-rhf',type=click.Path(exists=True),required=True,help='Input the secondr.rawhmm file resulted from nuchmm-train.')
