@@ -176,6 +176,23 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
     peaksfile_list = load_histonefile(inputpeakslistfiles)
     nucposfile_list = load_histonefile(nucpositionfiles)
     outputfile_list = []
+
+    # create histone_marks.txt
+    print("Createing histone_marks.txt")
+    if file_check('histone_marks.txt'):
+        print("histone_marks.txt exists, skip and please manually check it.")
+    else:
+        with open('histone_marks','w') as his_file:
+            marks_list = peaksfile_list[0]
+            for mark_file in marks_list:
+                # if user following the standard naming rule, the histone marks should behind celltype
+                mark_name = mark_file.split('/')[-1].split('_')[1]
+                if str.lower(mark_name[0])=='h':
+                    his_file.write(mark_name+'\n')
+                else:
+                    print("Not standard file name, need manually create histone_marks.txt")
+        his_file.close()
+
     # assign peaks mark to nucleosome
     peaks_num = 0
     for idx,nucposfile in enumerate(nucposfile_list):
