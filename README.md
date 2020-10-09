@@ -119,7 +119,7 @@ The default output file will be name HMM_<# histone marks>.rawhmm in the current
 ### **Step4: Matrix visualization and background state detection.**
 
 
-Manually create 
+Check if there is a auto-generated histone_marks.txt file(Generated in NucHMM-init process), it not, then manually create 
 ```
 histone_marks.txt file that contains all histone marks. 
 (check the file format in example_files/histone_marks.txt)  
