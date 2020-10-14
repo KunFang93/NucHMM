@@ -140,7 +140,7 @@ def rawhmm2matrix(rawhmmfile,histonelistfile,transmat,markstatemat,mark,output_m
     return numstate,out,trans_matrix,histone_list,emit_matrix
 
 
-def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark,color_pick,emitmat):
+def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark,color_pick,emitmat,mark_threshold):
     '''Visualization of Transition matrix and mark-state matrix'''
 
     # matrix colors
@@ -160,7 +160,7 @@ def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,ma
     numstate,out,trans_matrix,histone_list,emit_matrix = rawhmm2matrix(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark)
     bar_max = out.max()
     fig, ax = plt.subplots(figsize=(20,15))
-    show_annot_array = out >=bar_max/4
+    show_annot_array = out >=mark_threshold
     y_label = []
     for i in range(numstate):
         y_label.append('S'+ str(i+1))
