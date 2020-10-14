@@ -161,6 +161,7 @@ Firstly,
 Double-Check states_genomic_location.txt and Total_distribution.png.
 Make sure the predicted genomic location in states_genomic_location.txt fits your empirical knowledge.
 If not, you can manually edit the states_genomic_location.txt file.
+create like_wigs_list.txt
 ```
 
 Then,
