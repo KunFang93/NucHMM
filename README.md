@@ -6,8 +6,8 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Recent Changes for NucHMM (version 1.1)
 
-* increase --markthreshold parameter in nuchmm-screen-init and matrix-visualize*  
-* fix background_state bug for nuchmm-screen-init*
+* increase --markthreshold parameter in nuchmm-screen-init and matrix-visualize  
+* fix background_state bug for nuchmm-screen-init
 
 ## Workflow
 <img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="900">
