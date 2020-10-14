@@ -4,9 +4,10 @@
 
 Nucleosome organization, often described as its positioning, spacing and regularity, is the interplay among nucleosome and nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome regularity, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
 
-## Recent Changes for NucHMM (version 1.0)
+## Recent Changes for NucHMM (version 1.1)
 
-*N/A*
+* increase --markthreshold parameter in nuchmm-screen-init and matrix-visualize*  
+* fix background_state bug for nuchmm-screen-init*
 
 ## Workflow
 <img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="900">
@@ -385,6 +386,9 @@ Commands:
      * `--rescalelength(-rl)`:  
      Specify the rescaled gene body length. Default: 30000.
      
+     * `--markthreshold(-mt)`:  
+     Specify the mark threshold for state-mark matrix. Default: 0.25.
+     
      * `--refhg19/--refhg38`:  
      Specify the reference genome. Default: built-in hg19.
      
@@ -470,6 +474,9 @@ Commands:
       
      * `--matrixcolor(-mc)`:  
      Specify the color palette of the matrix. 0 is red-white; 1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.
+     
+     * `--markthreshold(-mt)`:  
+     Specify the mark threshold for state-mark matrix. Default: 0.25.
      
      * `--transmat(-tmat)`:  
      Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png
