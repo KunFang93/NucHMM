@@ -480,7 +480,7 @@ def NucHMM_train(config, numhist, refgenome, b, i, numstates, precomp_list, num,
 @click.option('--downbound','-db',default=10000,help='Specify downstream boundary for plotting the distribution, '
                                                      'cannot exceed than `--downboundary` used in nuchmm-init. Default: 10000.')
 @click.option('--rescalelength','-rl',default=30000,help='Specify the rescaled gene body length. Default: 30000.')
-@click.option('--markthreshold','-mt',default=0.4,help='Specify the mark threshold for state-mark matrix')
+@click.option('--markthreshold','-mt',default=0.25,help='Specify the mark threshold for state-mark matrix. Default: 0.25.')
 @click.option('--refhg19/--refhg38',default=True,help='Specify the reference genome. Default: built-in hg19.')
 @click.option('--outfile','-of',type=click.Path(),help='Specify the path and name of the identified genomic location file.')
 @click.option('--removetmpfile','-rmf',is_flag=True,help='Remove temporary files')
@@ -945,6 +945,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
               help='Input histone_marks.txt file that contains all histone marks used in nuchmm-init.')
 @click.option('--matrixcolor','-mc',default=2, help='Specify the color palette of the matrix. 0 is red-white; '
                                                     '1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.')
+@click.option('--markthreshold','-mt',default=0.25,help='Specify the threshold to show the probability in the matrix. Default: 0.25.')
 @click.option('--transmat','-tmat',type=click.Path(),
               help='Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png')
 @click.option('--markstatemat','-msmat',type=click.Path(),
@@ -953,6 +954,8 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
 @click.option('mark','--M',is_flag=True,help='Divide the element of emission probability matrix by the number of the mark in that observation. '
                                              'Very strong assumption. Not recommend use. ')
 @click.option('--writematrix', is_flag=True, help='Write mark_state matrix and transistion probability matrix in txt files.')
-def matrix_visualize(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,emitmat,matrixcolor):
+def matrix_visualize(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,emitmat,matrixcolor,markthreshold):
     '''Visualize the Transition and Mark-state matrix.'''
-    HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,matrixcolor,emitmat)
+    if markthreshold == 0.25:
+        print("Use default mark threshold 0.25, -mt command is used to specify mark threshold.")
+    HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,matrixcolor,emitmat,markthreshold)
