@@ -12,7 +12,7 @@
 ########                                                                                 ########
 ########    Working Environment:  Python3                                                ########
 ########                                                                                 ########
-########    Date:      2020-08-04                                                        ########
+########    Date:      2020-10-13                                                        ########
 ########                                                                                 ########
 ########                                                                                 ########
 #################################################################################################
@@ -32,7 +32,7 @@ from NucHMM_precompile import transcript_factor_assign, segment_gene, precompile
 from NucHMM_hmm import hmm, hmm_calling, modifyhmm, hmm_second
 from NucHMM_states_coverage import create_state_coverage_files
 from NucHMM_Feature_screen import select_unique_state, genomic_loc_finder, genomic_loc_filter, array_num_filter
-from NucHMM_Feature_screen import nuc_positioning_filter,regularity_spacing_filter
+from NucHMM_Feature_screen import nuc_positioning_filter,regularity_spacing_filter,statem_to_histm
 from NucHMM_utilities import get_time, filter_info_print, count_file_rows, file_check, query_yes_no, input_new_name, which
 from NucHMM_common_data import hg19,hg38,val2chr,info2strand,spe_colors
 from NucHMM_Visualization import plot_state_coverage,HMM_matrix_visualization,plot_violin_nuc_pos
@@ -95,7 +95,7 @@ class Config(object):
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group(cls=SpecialHelpOrder)
-@click.version_option(version=1.0)
+@click.version_option(version=1.1)
 @click.option('--hmm-directory', type=click.Path(),help='the path of NucHMM_Cplus bin')
 @pass_config
 def cli(config, hmm_directory):
@@ -480,11 +480,12 @@ def NucHMM_train(config, numhist, refgenome, b, i, numstates, precomp_list, num,
 @click.option('--downbound','-db',default=10000,help='Specify downstream boundary for plotting the distribution, '
                                                      'cannot exceed than `--downboundary` used in nuchmm-init. Default: 10000.')
 @click.option('--rescalelength','-rl',default=30000,help='Specify the rescaled gene body length. Default: 30000.')
+@click.option('--markthreshold','-mt',default=0.4,help='Specify the mark threshold for state-mark matrix')
 @click.option('--refhg19/--refhg38',default=True,help='Specify the reference genome. Default: built-in hg19.')
 @click.option('--outfile','-of',type=click.Path(),help='Specify the path and name of the identified genomic location file.')
 @click.option('--removetmpfile','-rmf',is_flag=True,help='Remove temporary files')
 def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, statesfilelist, outputsfilelist, winmethod,
-                       overwrite, winsize, updistal, upproximal, uppromoter, downbound,rescalelength, refhg19,
+                       overwrite, winsize, updistal, upproximal, uppromoter, downbound,rescalelength, markthreshold, refhg19,
                        plotcellmark, plottotalmark, outfile,removetmpfile):
     '''Initialize the screen step by providing sorted state file and the suggested genomic locations of HMM states'''
     background_state = list(bgstate)
@@ -492,6 +493,17 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
     const_interval = 100
     samplepoints = rescalelength//const_interval
     filt_statefiles_list = []
+    statefile_path = './'
+    trans_matrix,emit_matrix,numstate,numoutput = load_rawhmm(rawhmmfile)
+    state_mark2histone_mark,state4write = statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix, markthreshold,background_state)
+    # output mark combination for each state
+    print('State Corresponding Histone marks')
+    for state in sorted(state4write):
+        if str(state) in background_state:
+            continue
+        else:
+            print('S'+str(state) + ' ' +','.join(state4write[state]))
+            
     if statesfilelist is None and outputsfilelist is None:
         for celltype in celltypes_list:
             outstatefile = celltype + '_states_srt_uniq.bed'
@@ -503,48 +515,52 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
                 else:
                     print("Overwrite %s" % outstatefile)
                     filt_statefiles_list.append(outstatefile)
-                    statefile_name = celltype + '_states_secondr.bed'
+                    statefile_name = statefile_path + '/' + celltype + '_states_secondr.bed'
                     if file_check(statefile_name):
                         query_mark2 = query_yes_no("%s state file detected, use this one?" % celltype)
                         if query_mark2:
-                            select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                            select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                                 winmethod, winsize, celltype)
                         else:
                             statefile_name = input_new_name('Please input ' + celltype + ' state file from second round hmm: ' )
+                            statefile_path = '/'.join((statefile_name.split('/')[:-1]))
                             if file_check(statefile_name):
-                                select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                                select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                                     winmethod, winsize, celltype)
                             else:
                                 print(celltype + 'secondr round file not exists!')
                                 exit(1)
                     else:
                         statefile_name = input_new_name('Please input ' + celltype + ' state file from second round hmm: ' )
+                        statefile_path = '/'.join((statefile_name.split('/')[:-1]))
                         if file_check(statefile_name):
-                            select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                            select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                                 winmethod, winsize, celltype)
                         else:
                             print(celltype + 'secondr round file not exists!')
                             exit(1)
             else:
                 filt_statefiles_list.append(outstatefile)
-                statefile_name = celltype + '_states_secondr.bed'
+                statefile_name = statefile_path + '/' + celltype + '_states_secondr.bed'
                 if file_check(statefile_name):
                     query_mark2 = query_yes_no("%s state file detected, use this one?" % celltype)
                     if query_mark2:
-                        select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                        select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                             winmethod, winsize, celltype)
                     else:
                         statefile_name = input_new_name('Please input ' + celltype + ' state file from second round hmm: ' )
+                        statefile_path = '/'.join((statefile_name.split('/')[:-1]))
                         if file_check(statefile_name):
-                            select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                            select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                                 winmethod, winsize, celltype)
                         else:
                             print(celltype + 'secondr round file not exists!')
                             exit(1)
                 else:
                     statefile_name = input_new_name('Please input ' + celltype + ' state file from second round hmm: ' )
+                    statefile_path = '/'.join((statefile_name.split('/')[:-1]))
                     if file_check(statefile_name):
-                        select_unique_state(rawhmmfile, histonelistfile, statefile_name, None, outstatefile, background_state,
+                        select_unique_state(state_mark2histone_mark, statefile_name, None, outstatefile, background_state,
                                             winmethod, winsize, celltype)
                     else:
                         print(celltype + 'secondr round file not exists!')
@@ -557,7 +573,7 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
             outputfile = outputsfiles_list[idx]
             celltype = celltypes_list[idx]
             outstatefile = celltype + '_states_srt_uniq.bed'
-            select_unique_state(rawhmmfile, histonelistfile, statefile_name, outputfile, outstatefile, background_state,
+            select_unique_state(state_mark2histone_mark, statefile_name, outputfile, outstatefile, background_state,
                                 winmethod, winsize, celltype)
             filt_statefiles_list.append(outstatefile)
 
@@ -576,12 +592,14 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
             if query_mark3:
                 print('overwriting')
                 genomic_loc_finder(genesfile,filt_statefiles_list,rawhmmfile,histonelistfile,updistal,upproximal,uppromoter,
-                                   downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,removetmpfile)
+                                   downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,
+                                   markthreshold,removetmpfile)
             else:
                 print("Please use existed %s" % outputfile)
         else:
             genomic_loc_finder(genesfile,filt_statefiles_list,rawhmmfile,histonelistfile,updistal,upproximal,uppromoter,
-                               downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,removetmpfile)
+                               downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,
+                               markthreshold,removetmpfile)
     else:
         outputfile = outfile
         if file_check(outputfile):
@@ -591,12 +609,14 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
                 query_mark3 = query_yes_no("%s exists! Do you want ot overwrite it?" % outputfile)
             if query_mark3:
                 genomic_loc_finder(genesfile,filt_statefiles_list,rawhmmfile,histonelistfile,updistal,upproximal,uppromoter,
-                                   downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,removetmpfile)
+                                   downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,
+                                   markthreshold,removetmpfile)
             else:
                 print("Please use existed %s" % outputfile)
         else:
             genomic_loc_finder(genesfile,filt_statefiles_list,rawhmmfile,histonelistfile,updistal,upproximal,uppromoter,
-                               downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,removetmpfile)
+                               downbound,bgstate,outputfile,samplepoints,rescalelength,refgene,plotcellmark,plottotalmark,
+                               markthreshold,removetmpfile)
 
     # write sorted and unique state file list for nuchmm-screen use
     f_name = 'nuchmm_screen_init_result_files.txt'

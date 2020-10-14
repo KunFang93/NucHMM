@@ -101,7 +101,7 @@ def pick_one(idx, key, sorted_key, diction, pick_one_window, state_mark2histone_
     for keys in key_env:
         if keys != key:
             env_states_list += diction[keys]
-    # pay attention to dont use shallow copy here
+    # pay attention to don't use shallow copy here
     states_list = diction[key][:]
 
     try:
@@ -150,7 +150,7 @@ def pick_one(idx, key, sorted_key, diction, pick_one_window, state_mark2histone_
 
     return final_picked_states
 
-def statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix):
+def statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix,mark_threshold,background_state):
     '''
     Generate statem2histm dictionary
     :param rawhmmfile:
@@ -159,8 +159,6 @@ def statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix):
     '7':16,'8':5,'9':6,'10':32,'11':21,'12':64}. key is state ('1':state1) and value is histone mark value
     state4write: a dictionary with key: state and value: the histone marks list
     '''
-    # 2 mean only those marks that are more than max_prob/2 can be consider as functional mark for this state
-    mark_threshold = 2
     histone_list = load_histonefile(histonelistfile)
 
     # hist2value format {'H3K4me3':1,'H3K4me1':2...}
@@ -171,24 +169,30 @@ def statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix):
 
     out = emit2mark(emit_matrix,numstate,numoutput,False)
 
-    bar_max = out.max()
     # filtout_array format is np.array([[False, True],[True, False]])
     statem2histm = {}
     state4write = defaultdict(list)
     #
-    filtout_array = out >=bar_max/mark_threshold
+    filtout_array = out >= mark_threshold
 
     for idy, state in enumerate(filtout_array):
         sum = 0
+        mark = 0
         for idx,value in enumerate(state):
             if value:
+                mark += 1
                 sum += hist2value[idx2hist[idx]]
                 state4write[idy+1].append(idx2hist[idx])
-        statem2histm[str(idy+1)] = sum
+        if mark == 0:
+            statem2histm[str(idy+1)] = 0
+            state4write[idy+1] = []
+        else:
+            statem2histm[str(idy+1)] = sum
+
     return statem2histm,state4write
 
 
-def select_unique_state(rawhmmfile, histonelistfile, statefile, outputfile, filtstatefile, background_state, winmethod,
+def select_unique_state(state_mark2histone_mark, statefile, outputfile, filtstatefile, background_state, winmethod,
                         winsize, celltype):
     '''
     select the unique state for some multi-state nucleosome.
@@ -205,23 +209,16 @@ def select_unique_state(rawhmmfile, histonelistfile, statefile, outputfile, filt
     :param statem2hism: see statem_to_histm function
     :return: None
     '''
-    trans_matrix,emit_matrix,numstate,numoutput = load_rawhmm(rawhmmfile)
-    state_mark2histone_mark,state4write = statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix)
-
-    # print(state_mark2histone_mark)
-    # output mark combination for each state
-    print('State Corresponding Histone marks')
-    for state in sorted(state4write):
-        print('S'+str(state) + ' ' +','.join(state4write[state]))
 
     # window size for picking the unique state
     pick_one_window = winsize
     diction = load_states_file(statefile,background_state)
     # load ref output file if necessary
     ref_diction = None
+    statefile_path = '/'.join((statefile.split('/')[:-1]))
     if not winmethod:
         if outputfile is None:
-            reffile = celltype + '_output_secondr'  + '.bed'
+            reffile = statefile_path + '/' + celltype + '_output_secondr'  + '.bed'
             if file_check(reffile):
                 query_mark = query_yes_no("Detected outputfile exists. Do you want to use this %s" % reffile)
                 if query_mark:
@@ -383,7 +380,7 @@ def identify_genomic_location(States_x_total,state4write,genome_region_index,His
 
     # empirical knowledge
     empirical_dict = {state:[] for state in States_x_total}
-    for state in state4write:
+    for state in States_x_total:
         for histonem in state4write[state]:
             try:
                 empirical_dict[state] += Histone_location[histonem]
@@ -495,7 +492,7 @@ def output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_ot
 
 def genomic_loc_finder(genesfile,filelist,rawhmmfile,histonelistfile,upDistal,up_proximal,up_promoter,
                        down_boundary,bgstate,outputfile,samplepoints,rescalelength,refgene,plot_mark,
-                       plot_total_mark,removetmpfile):
+                       plot_total_mark,mark_threshold,removetmpfile):
     '''
     The main body of state-loc-finder
     :param genesfile: the file that contains all genes we use for selecting region
@@ -552,7 +549,7 @@ def genomic_loc_finder(genesfile,filelist,rawhmmfile,histonelistfile,upDistal,up
                                      States_x_total,plot_mark,False)
         else:
             query_mark = query_yes_no("Do you have "+mapped_upbed+'/'+mapped_genebody+'/'+mapped_downbed
-                                      +'/'+" in other directory?")
+                                      +'/'+" in other directory?\n")
             if query_mark:
                 if sys.version_info > (3,0):
                     new_path = input( "Please input the directory(Folder path): ")
@@ -588,7 +585,7 @@ def genomic_loc_finder(genesfile,filelist,rawhmmfile,histonelistfile,upDistal,up
     '''Loading mark-state matrix'''
     print('\n')
     print('Predicting genomic location for state...')
-    state_mark2histone_mark,state4write = statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix)
+    state_mark2histone_mark,state4write = statem_to_histm(histonelistfile,numstate,numoutput,emit_matrix,mark_threshold,background_state)
     genome_region_index = create_genomic_seg_diction(upDistal,up_proximal,up_promoter, rescale_gene_length, sample_rate)
     state_region_dict = identify_genomic_location(States_x_total,state4write,genome_region_index,Histone_location)
     # because the value in States_x is already the frequency, we need to reform it
