@@ -477,7 +477,7 @@ Commands:
      Specify the color palette of the matrix. 0 is red-white; 1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.
      
      * `--markthreshold(-mt)`:  
-     Specify the mark threshold for state-mark matrix. Default: 0.25.
+     Specify the mark threshold for state-mark matrix. Default: 1 (not showing).
      
      * `--transmat(-tmat)`:  
      Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png
