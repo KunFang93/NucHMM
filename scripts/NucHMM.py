@@ -945,7 +945,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
               help='Input histone_marks.txt file that contains all histone marks used in nuchmm-init.')
 @click.option('--matrixcolor','-mc',default=2, help='Specify the color palette of the matrix. 0 is red-white; '
                                                     '1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.')
-@click.option('--markthreshold','-mt',default=0.25,help='Specify the threshold to show the probability in the matrix. Default: 0.25.')
+@click.option('--markthreshold','-mt',default=1,help='Specify the threshold to show the probability in the matrix. Default: 1 (not show).')
 @click.option('--transmat','-tmat',type=click.Path(),
               help='Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png')
 @click.option('--markstatemat','-msmat',type=click.Path(),
