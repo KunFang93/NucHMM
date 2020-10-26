@@ -807,7 +807,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     for celltype in cell_types:
         combined_file_name = celltype + '_total' + out_suffix
         if file_check(combined_file_name):
-            query_mark3 = query_yes_no("%s is already exists, do you want to overwrite it?")
+            query_mark3 = query_yes_no("%s is already exists, do you want to overwrite it?" % combined_file_name)
             if not query_mark3:
                 gl_an_resp_filt_files.append(combined_file_name)
                 print("Use exist %s." % combined_file_name)
@@ -920,7 +920,10 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
         df_final_info_post = pd.DataFrame(final_info_dict_post,index=df_row)
     except ValueError:
         print("Please check the -sn parameter")
+        print(final_info_dict_post)
+        print(df_row)
         exit(1)
+
     df_final_info_post = df_final_info_post[final_cols]
     df_final_info_post.to_csv(final_table_name_post,sep='\t')
     print("Final nucleosome feature tables is %s" % (final_table_name_post))
@@ -945,7 +948,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
               help='Input histone_marks.txt file that contains all histone marks used in nuchmm-init.')
 @click.option('--matrixcolor','-mc',default=2, help='Specify the color palette of the matrix. 0 is red-white; '
                                                     '1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.')
-@click.option('--markthreshold','-mt',default=0.25,help='Specify the threshold to show the probability in the matrix. Default: 0.25.')
+@click.option('--markthreshold','-mt',default=1,help='Specify the threshold to show the probability in the matrix. Default: 1 (not showing).')
 @click.option('--transmat','-tmat',type=click.Path(),
               help='Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png')
 @click.option('--markstatemat','-msmat',type=click.Path(),
