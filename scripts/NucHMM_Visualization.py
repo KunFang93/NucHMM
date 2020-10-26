@@ -188,7 +188,7 @@ def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,ma
     transout = np.array(trans_matrix)
     bar_max = transout.max()
     fig, ax = plt.subplots(figsize=(20,15))
-    trans_annot_array = transout >=bar_max/4
+    trans_annot_array = transout >=mark_threshold
     tick_labels = []
     for i in range(numstate):
         tick_labels.append('S'+ str(i+1))
