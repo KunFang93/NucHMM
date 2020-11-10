@@ -182,7 +182,7 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
     if file_check('histone_marks.txt'):
         print("histone_marks.txt exists, skip and please manually check it.")
     else:
-        with open('histone_marks','w') as his_file:
+        with open('histone_marks.txt','w') as his_file:
             marks_list = peaksfile_list[0]
             with open(marks_list,'r') as mark_f:
                 for mark_file in mark_f:
