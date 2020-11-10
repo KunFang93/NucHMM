@@ -20,6 +20,7 @@
 
 
 import re
+import os
 import sys
 import click
 import subprocess
@@ -240,7 +241,9 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
         prec_outputfile_list = 'Precompfiles_list.txt'
         f = open(prec_outputfile_list,'w')
         for celltype in celltype_list:
-            f.write(celltype + '_' +str(peaks_num) + '.precomp'+'\n')
+            current_name = celltype + '_' +str(peaks_num) + '.precomp'
+            dir_path = os.path.dirname(os.path.realpath(current_name))
+            f.write(dir_path+'/'+current_name+'\n')
         f.close()
     else:
         prec_outputfile_list = outputfilelist
