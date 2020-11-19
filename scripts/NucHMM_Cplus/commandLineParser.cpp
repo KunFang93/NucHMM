@@ -24,7 +24,7 @@ namespace HMM
         if (argc == 1)
         {
             cerr << "NucHMM-learn version " << 1.0 << endl;
-            cerr << "Usage: T-cep-learn <options> numStates numOutputs filename1 filename2...\n";
+            cerr << "Usage: NucHMM-learn <options> numStates numOutputs filename1 filename2...\n";
             cerr << "Options:\n";
             cerr << "-b: calculate and report BIC after every iteration\n";
             cerr << "-z: zero probabilities when they drop below the min probability threshold\n";
