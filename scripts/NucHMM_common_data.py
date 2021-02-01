@@ -15,7 +15,7 @@ val2chr = {1: 'chr1', 2: 'chr2', 3: 'chr3', 4: 'chr4', 5: 'chr5', 6: 'chr6', 7: 
 
 spe_colors = {'1':'gold','2':'blue', '3':'orange', '4':'green', '5':'red', '6':'purple', '7':'brown', '8':'pink',
               '9':'gray', '10':'olive','11':'cyan','12':'lightblue','13':'peru', '14':'navy','15':'limegreen',
-              '16':'darkcyan','17':'orchid','18':'saddlebrown','19':'sliver','20':'black'}
+              '16':'darkcyan','17':'orchid','18':'saddlebrown','19':'silver','20':'black'}
 
 info2strand = {'-':'back', '+':'for'}
 
