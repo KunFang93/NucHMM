@@ -6,7 +6,7 @@ Nucleosome organization, often described as its positioning, spacing and regular
 
 ## Recent Changes for NucHMM (version 1.1)
 
-* increase --markthreshold parameter in nuchmm-screen-init and matrix-visualize  
+* add --markthreshold parameter in nuchmm-screen-init and matrix-visualize  
 * fix background_state bug for nuchmm-screen-init
 
 ## Workflow
@@ -106,7 +106,7 @@ precompfiles_list.txt that contains all precomp files result from nuchmm-init.
 Then, 
 
 ```
-NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -rmf
+NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> -nums <number of input states. e.g. 20> -rmf
 ```
 
 Note that training process could take few hours up to a day depends on how much data you input. We normally use nohup command to run the this nuchmm-train command in the background by
@@ -161,13 +161,14 @@ Firstly,
 Double-Check states_genomic_location.txt and Total_distribution.png.
 Make sure the predicted genomic location in states_genomic_location.txt fits your empirical knowledge.
 If not, you can manually edit the states_genomic_location.txt file.
+create like_wigs_list.txt
 ```
 
 Then,
 ```
 NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
 -lwfl like_wigs_list.txt -nucf nucposfiles_list.txt -bg <background state1> .. -bg <background stateN> \
--sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -rmf
+-sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -wi -rmf
 ```
 
 The default output files:
@@ -476,7 +477,7 @@ Commands:
      Specify the color palette of the matrix. 0 is red-white; 1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.
      
      * `--markthreshold(-mt)`:  
-     Specify the mark threshold for state-mark matrix. Default: 0.25.
+     Specify the mark threshold for state-mark matrix. Default: 1 (not showing).
      
      * `--transmat(-tmat)`:  
      Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png

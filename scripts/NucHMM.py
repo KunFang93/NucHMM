@@ -178,6 +178,7 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ci
     peaksfile_list = load_histonefile(inputpeakslistfiles)
     nucposfile_list = load_histonefile(nucpositionfiles)
     outputfile_list = []
+<<<<<<< HEAD
     if ciselementlist is not None:
         ciselement_list = load_histonefile(ciselementlist)
         # assign peaks mark to nucleosome
