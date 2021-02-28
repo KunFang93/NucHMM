@@ -4,7 +4,7 @@
 
 Nucleosome organization, often described as its positioning, spacing and regularity, is the interplay among nucleosome and nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome regularity, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
 
-## Recent Changes for NucHMM (version 1.2)
+## NucHMM Update Logs(version 1.2)
 
 v1.2
 * add --ciselementlist parameter in nuchmm-init
