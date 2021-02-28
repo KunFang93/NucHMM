@@ -186,7 +186,7 @@ other temporary files and figures are stored in detail_info folder
 ```
 
 The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
-The final kept and annotated nucleosomes are in < celltypes >___gl_an_resp_pos_final.bed.
+The final kept and annotated nucleosomes are in < celltypes >_gl_an_resp_pos_final.bed.
 The columns in < celltypes >_gl_an_resp_pos_final.bed are:
 ```
 Chrom   Start   End State   Local.Positioning.Score Local.Spacing   Local.Phasing.info  Positioning.Mark
