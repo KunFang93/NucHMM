@@ -140,7 +140,7 @@ def rawhmm2matrix(rawhmmfile,histonelistfile,transmat,markstatemat,mark,output_m
     return numstate,out,trans_matrix,histone_list,emit_matrix
 
 
-def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark,color_pick,emitmat,mark_threshold):
+def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark,color_pick,emitmat,mark_threshold,inputmatrix):
     '''Visualization of Transition matrix and mark-state matrix'''
 
     # matrix colors
@@ -157,7 +157,10 @@ def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,ma
         print("Use default color")
         matrix_color = "coolwarm"
 
+
     numstate,out,trans_matrix,histone_list,emit_matrix = rawhmm2matrix(rawhmmfile,histonelistfile,transmat,markstatemat,mark,outputmark)
+    if inputmatrix is not None:
+        out = np.array(pd.read_csv(inputmatrix,sep='\t',index_col=0))
     bar_max = out.max()
     fig, ax = plt.subplots(figsize=(20,15))
     show_annot_array = out >=mark_threshold
@@ -188,7 +191,7 @@ def HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,ma
     transout = np.array(trans_matrix)
     bar_max = transout.max()
     fig, ax = plt.subplots(figsize=(20,15))
-    trans_annot_array = transout >=bar_max/4
+    trans_annot_array = transout >=mark_threshold
     tick_labels = []
     for i in range(numstate):
         tick_labels.append('S'+ str(i+1))
@@ -363,7 +366,19 @@ def plot_violin_nuc_pos(states_pos_dict,states_list,spe_colors,figname):
         trans_dict['States'] += [state] * len(states_pos_dict[state])
     colors_p = [spe_colors[state] for state in states_list]
     df_pos_state = pd.DataFrame(trans_dict)
-    print("Plotting..")
-    ax = sns.violinplot(x="States", y="Pos. Score", order=states_list,data=df_pos_state, palette=colors_p)
-    plt.savefig(figname,dpi=300)
-    print("Plotting Finish!")
+    if df_pos_state.loc[:,'Pos. Score'].max() - df_pos_state.loc[:,'Pos. Score'].min() > 80:
+        log_mark = True
+    else:
+        log_mark = False
+    if not log_mark:
+        print("Plotting..")
+        ax = sns.violinplot(x="States", y="Pos. Score", order=states_list,data=df_pos_state, palette=colors_p)
+        plt.savefig(figname,dpi=300)
+        print("Plotting Finish!")
+    else:
+        df_pos_state.loc[:,"Pos. Score"] = np.log2(df_pos_state.loc[:,"Pos. Score"] + 1)
+        print("Plotting..")
+        ax = sns.violinplot(x="States", y="Pos. Score", order=states_list,data=df_pos_state, palette=colors_p)
+        plt.ylabel("Log2(Pos. Score + 1)")
+        plt.savefig(figname,dpi=300)
+        print("Plotting Finish!")

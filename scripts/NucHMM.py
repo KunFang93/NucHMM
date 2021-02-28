@@ -12,7 +12,7 @@
 ########                                                                                 ########
 ########    Working Environment:  Python3                                                ########
 ########                                                                                 ########
-########    Date:      2020-10-13                                                        ########
+########    Date:      2021-02-12                                                        ########
 ########                                                                                 ########
 ########                                                                                 ########
 #################################################################################################
@@ -20,6 +20,7 @@
 
 
 import re
+import os
 import sys
 import click
 import subprocess
@@ -28,17 +29,17 @@ import pandas as pd
 import multiprocessing
 from collections import defaultdict
 from NucHMM_prep import QC_step, Mapping_step, Peak_Nuc_calling_step
-from NucHMM_precompile import transcript_factor_assign, segment_gene, precompile_step
+from NucHMM_precompile import transcript_factor_assign, ciselements_hm_assgin, segment_gene, precompile_step
 from NucHMM_hmm import hmm, hmm_calling, modifyhmm, hmm_second
 from NucHMM_states_coverage import create_state_coverage_files
-from NucHMM_Feature_screen import select_unique_state, genomic_loc_finder, genomic_loc_filter, array_num_filter
-from NucHMM_Feature_screen import nuc_positioning_filter,regularity_spacing_filter,statem_to_histm
+from NucHMM_Feature_screen import select_unique_state, genomic_loc_finder, genomic_loc_filter, array_num_filter, filtered_statistic
+from NucHMM_Feature_screen import nuc_positioning_filter,regularity_spacing_filter,statem_to_histm, pre_array_mark, finalize_output
 from NucHMM_utilities import get_time, filter_info_print, count_file_rows, file_check, query_yes_no, input_new_name, which
 from NucHMM_common_data import hg19,hg38,val2chr,info2strand,spe_colors
 from NucHMM_Visualization import plot_state_coverage,HMM_matrix_visualization,plot_violin_nuc_pos
-from NucHMM_Load_Write_files import load_genome_size_file, write_binnum_file, write_precomp_file,load_assignedtf_file, load_fq_list
-from NucHMM_Load_Write_files import load_histonefile, load_nuc_position_file, load_rawhmm, load_fq_list, load_bam_list, write_prep_resultlist
-
+from NucHMM_Load_Write_files import load_genome_size_file, write_binnum_file, write_precomp_file,load_assignedtf_file
+from NucHMM_Load_Write_files import load_histonefile, load_nuc_position_file, load_rawhmm, load_fq_list, load_bam_list
+from NucHMM_Load_Write_files import  write_prep_resultlist, load_fq_list, write_final_array
 
 # class for setting up subcommand order.
 # Inspired by https://stackoverflow.com/questions/47972638/how-can-i-define-the-order-of-click-sub-commands-in-help
@@ -158,10 +159,11 @@ def NucHMM_prep(fastq,inputfqslist,inputbamslist,fastqc,bowtieindexpath,bowtie2i
 @click.option('--refgenome', '-refg', type=click.Path(), help='The reference genome file contains the length of each chromosomes.')
 @click.option('--intersect_cutoff', '-ic',default=0.3, help='The intersect threshold to assign histone mark peaks to the nucleosomes.')
 @click.option('--gap', '-g', is_flag=True, help='Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes)')
+@click.option('--ciselementlist','-cel',type=click.Path(), help='The list of cell cis-element files, check the example file in example_files folder')
 @click.option('--upboundary', '-up',default=100000, help='Upstream boundary of TSS for selecting the training region.')
 @click.option('--downboundary', '-down',default=10000, help='Downstream boundary of TTS for selecting the training region.')
 @click.option('--removetmpfile','-rmf',is_flag=True,help='Flag of removing all temporary files.')
-def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, genefile, upboundary, downboundary,
+def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ciselementlist, genefile, upboundary, downboundary,
                 outputfilelist, refgenome, removetmpfile):
     '''Assign histone marks to nucleosomes and create precomp bins for nuchmm-train. All .precomp files name
     are writing to Precomps_list.txt'''
@@ -176,96 +178,182 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ge
     peaksfile_list = load_histonefile(inputpeakslistfiles)
     nucposfile_list = load_histonefile(nucpositionfiles)
     outputfile_list = []
-
-    # create histone_marks.txt
-    print("Createing histone_marks.txt")
-    if file_check('histone_marks.txt'):
-        print("histone_marks.txt exists, skip and please manually check it.")
-    else:
-        with open('histone_marks','w') as his_file:
-            marks_list = peaksfile_list[0]
-            for mark_file in marks_list:
-                # if user following the standard naming rule, the histone marks should behind celltype
-                mark_name = mark_file.split('/')[-1].split('_')[1]
-                if str.lower(mark_name[0])=='h':
-                    his_file.write(mark_name+'\n')
+    if ciselementlist is not None:
+        ciselement_list = load_histonefile(ciselementlist)
+        # assign peaks mark to nucleosome
+        peaks_num = 0
+        cisels_num = 0
+        for idx,nucposfile in enumerate(nucposfile_list):
+            celltype = nucposfile.split('/')[-1].split('_')[0]
+            celltype_list.append(celltype)
+            print("\nAssign Peaks for %s" % celltype)
+            inputpeakslist = peaksfile_list[idx]
+            inputciselslist = ciselement_list[idx]
+            nucposition = nucposfile
+            peaks_list = load_histonefile(inputpeakslist)
+            cisels_list = load_histonefile(inputciselslist)
+            peaks_num = len(peaks_list)
+            cisels_num = len(cisels_list)
+            outputfile = celltype + '_' + str(peaks_num+cisels_num) + '_assign.bed'
+            outputfile_list.append(outputfile)
+            if file_check(outputfile):
+                query_mark = query_yes_no(outputfile + ' exists, do you want to overwrite it?')
+                if query_mark:
+                    ciselements_hm_assgin(intersect_cutoff, inputpeakslist, inputciselslist, outputfile, nucposition)
                 else:
-                    print("Not standard file name, need manually create histone_marks.txt")
-        his_file.close()
-
-    # assign peaks mark to nucleosome
-    peaks_num = 0
-    for idx,nucposfile in enumerate(nucposfile_list):
-        celltype = nucposfile.split('/')[-1].split('_')[0]
-        celltype_list.append(celltype)
-        print("\nAssign Peaks for %s" % celltype)
-        inputpeakslist = peaksfile_list[idx]
-        nucposition = nucposfile
-        peaks_list = load_histonefile(inputpeakslist)
-        peaks_num = len(peaks_list)
-        outputfile = celltype + '_' + str(peaks_num) + '_assign.bed'
-        outputfile_list.append(outputfile)
-        if file_check(outputfile):
-            query_mark = query_yes_no(outputfile + ' exists, do you want to overwrite it?')
-            if query_mark:
-                transcript_factor_assign(intersect_cutoff, gap, inputpeakslist, outputfile, nucposition)
+                    print("Use the exist %s." % outputfile)
             else:
-                print("Use the exist %s." % outputfile)
-        else:
-            transcript_factor_assign(intersect_cutoff, gap, inputpeakslist, outputfile, nucposition)
+                ciselements_hm_assgin(intersect_cutoff, inputpeakslist, inputciselslist, outputfile, nucposition)
 
-    # create gene segement file for later precompile step
-    print("\nCreating gene segment file..")
-    segoutfile = 'gene_seg_' + str(upboundary//1000) + 'k_' + str(downboundary//1000) + 'k.txt'
-    if file_check(segoutfile):
-        query_mark2 = query_yes_no(segoutfile + ' exists, do you want to overwrite it?')
-        if query_mark2:
+        # create gene segement file for later precompile step
+        print("\nCreating gene segment file..")
+        segoutfile = 'gene_seg_' + str(upboundary//1000) + 'k_' + str(downboundary//1000) + 'k.txt'
+        if file_check(segoutfile):
+            query_mark2 = query_yes_no(segoutfile + ' exists, do you want to overwrite it?')
+            if query_mark2:
+                segment_gene(genefile, segoutfile, upboundary, downboundary, refgene)
+            else:
+                print("Use the exist %s." % segoutfile)
+        else:
             segment_gene(genefile, segoutfile, upboundary, downboundary, refgene)
-        else:
-            print("Use the exist %s." % segoutfile)
-    else:
-        segment_gene(genefile, segoutfile, upboundary, downboundary, refgene)
 
-    # precompile step
-    print("\nPrecompiling the files")
-    assignedfilelist = "Assigned_files.txt"
-    f = open(assignedfilelist,'w')
-    for file in outputfile_list:
-        f.write(file+'\n')
-    f.close()
-
-    if outputfilelist is None:
-        prec_outputfile_list = 'Precompfiles_list.txt'
-        f = open(prec_outputfile_list,'w')
-        for celltype in celltype_list:
-            f.write(celltype + '_' +str(peaks_num) + '.precomp'+'\n')
-        f.close()
-    else:
-        prec_outputfile_list = outputfilelist
-
-    prec_skip_mark = True
-    for file in load_histonefile(prec_outputfile_list):
-        prec_skip_mark = prec_skip_mark and file_check(file)
-
-    if prec_skip_mark:
-        query_mark3 = query_yes_no('Precomp files exist, do you want to overwrite them?')
-        if query_mark3:
-            precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
-        else:
-            print("Use the existed .precomp files.")
-    else:
-        precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
-
-    print("\nWriting precomp files list to %s." % prec_outputfile_list)
-
-    if removetmpfile:
-        print("\nRemoving temporary files..")
+        # precompile step
+        print("\nPrecompiling the files")
+        assignedfilelist = "Assigned_files.txt"
+        f = open(assignedfilelist,'w')
         for file in outputfile_list:
-            subprocess.call("rm " + file, shell=True)
-        subprocess.call("rm " + segoutfile, shell=True)
-        subprocess.call("rm " + assignedfilelist, shell=True)
+            f.write(file+'\n')
+        f.close()
 
-    print('\nNucHMM init Finish!')
+        if outputfilelist is None:
+            prec_outputfile_list = 'Precompfiles_list.txt'
+            f = open(prec_outputfile_list,'w')
+            for celltype in celltype_list:
+                current_name = celltype + '_' +str(peaks_num+cisels_num) + '.precomp'
+                dir_path = os.path.dirname(os.path.realpath(current_name))
+                f.write(dir_path+'/'+current_name+'\n')
+            f.close()
+        else:
+            prec_outputfile_list = outputfilelist
+
+        prec_skip_mark = True
+        for file in load_histonefile(prec_outputfile_list):
+            prec_skip_mark = prec_skip_mark and file_check(file)
+
+        if prec_skip_mark:
+            query_mark3 = query_yes_no('Precomp files exist, do you want to overwrite them?')
+            if query_mark3:
+                precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
+            else:
+                print("Use the existed .precomp files.")
+        else:
+            precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
+
+        print("\nWriting precomp files list to %s." % prec_outputfile_list)
+
+        if removetmpfile:
+            print("\nRemoving temporary files..")
+            for file in outputfile_list:
+                subprocess.call("rm " + file, shell=True)
+            subprocess.call("rm " + segoutfile, shell=True)
+            subprocess.call("rm " + assignedfilelist, shell=True)
+
+        print('\nNucHMM init Finish!')
+
+    else:
+        # create histone_marks.txt
+        print("Createing histone_marks.txt")
+        if file_check('histone_marks.txt'):
+            print("histone_marks.txt exists, skip and please manually check it.")
+        else:
+            with open('histone_marks.txt','w') as his_file:
+                marks_list = peaksfile_list[0]
+                with open(marks_list,'r') as mark_f:
+                    for mark_file in mark_f:
+                        # if user following the standard naming rule, the histone marks should behind celltype
+                        mark_name = mark_file.split('/')[-1].split('_')[1]
+                        if str.lower(mark_name[0])=='h':
+                            his_file.write(mark_name+'\n')
+                        else:
+                            print("Not standard file name, need manually create histone_marks.txt")
+                mark_f.close()
+            his_file.close()
+
+        # assign peaks mark to nucleosome
+        peaks_num = 0
+        for idx,nucposfile in enumerate(nucposfile_list):
+            celltype = nucposfile.split('/')[-1].split('_')[0]
+            celltype_list.append(celltype)
+            print("\nAssign Peaks for %s" % celltype)
+            inputpeakslist = peaksfile_list[idx]
+            nucposition = nucposfile
+            peaks_list = load_histonefile(inputpeakslist)
+            peaks_num = len(peaks_list)
+            outputfile = celltype + '_' + str(peaks_num) + '_assign.bed'
+            outputfile_list.append(outputfile)
+            if file_check(outputfile):
+                query_mark = query_yes_no(outputfile + ' exists, do you want to overwrite it?')
+                if query_mark:
+                    transcript_factor_assign(intersect_cutoff, gap, inputpeakslist, outputfile, nucposition, 0)
+                else:
+                    print("Use the exist %s." % outputfile)
+            else:
+                transcript_factor_assign(intersect_cutoff, gap, inputpeakslist, outputfile, nucposition, 0)
+
+        # create gene segement file for later precompile step
+        print("\nCreating gene segment file..")
+        segoutfile = 'gene_seg_' + str(upboundary//1000) + 'k_' + str(downboundary//1000) + 'k.txt'
+        if file_check(segoutfile):
+            query_mark2 = query_yes_no(segoutfile + ' exists, do you want to overwrite it?')
+            if query_mark2:
+                segment_gene(genefile, segoutfile, upboundary, downboundary, refgene)
+            else:
+                print("Use the exist %s." % segoutfile)
+        else:
+            segment_gene(genefile, segoutfile, upboundary, downboundary, refgene)
+
+        # precompile step
+        print("\nPrecompiling the files")
+        assignedfilelist = "Assigned_files.txt"
+        f = open(assignedfilelist,'w')
+        for file in outputfile_list:
+            f.write(file+'\n')
+        f.close()
+
+        if outputfilelist is None:
+            prec_outputfile_list = 'Precompfiles_list.txt'
+            f = open(prec_outputfile_list,'w')
+            for celltype in celltype_list:
+                current_name = celltype + '_' +str(peaks_num) + '.precomp'
+                dir_path = os.path.dirname(os.path.realpath(current_name))
+                f.write(dir_path+'/'+current_name+'\n')
+            f.close()
+        else:
+            prec_outputfile_list = outputfilelist
+
+        prec_skip_mark = True
+        for file in load_histonefile(prec_outputfile_list):
+            prec_skip_mark = prec_skip_mark and file_check(file)
+
+        if prec_skip_mark:
+            query_mark3 = query_yes_no('Precomp files exist, do you want to overwrite them?')
+            if query_mark3:
+                precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
+            else:
+                print("Use the existed .precomp files.")
+        else:
+            precompile_step(assignedfilelist, segoutfile, prec_outputfile_list, refgene)
+
+        print("\nWriting precomp files list to %s." % prec_outputfile_list)
+
+        if removetmpfile:
+            print("\nRemoving temporary files..")
+            for file in outputfile_list:
+                subprocess.call("rm " + file, shell=True)
+            subprocess.call("rm " + segoutfile, shell=True)
+            subprocess.call("rm " + assignedfilelist, shell=True)
+
+        print('\nNucHMM init Finish!')
 
 @cli.command(help_priority=3)
 @click.option('--refgenome', '-refg', type=click.Path(exists=True), required=True, help='Input the reference genome file '
@@ -647,7 +735,7 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
 @click.option('--nucpositionfiles','-nucf',type=click.Path(exists=True),required=True,
               help='Input the nucleosome position files list')
 @click.option('--statesnumber', '-sn',required=True, type=int,help='Input the total number of HMM states (Include background states.)')
-@click.option('--bgstate', '-bg',multiple=True,help=' Specify background states that identified from the Mark-state matrix.')
+@click.option('--bgstate', '-bg',multiple=True,help='Specify background states that identified from the Mark-state matrix.')
 @click.option('--inputfileslist','-ifl',type=click.Path(),help='Input the list of files resulted from nuchmm-screen-init. '
                                                                'Check nuchmm_screen_init_result_files.txt in example_files folder for the detailed information. '
                                                                'The program will automatically look for the nuchmm_screen_init_result_files.txt in current directory.')
@@ -660,11 +748,12 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
               help='Specify the maximum distance between two nucleosomes in a nucleosome array. '
                    'If the distance between two nucleosome larger than this cutoff distance, '
                    'the program will consider these two nucleosomes are in different nucleosome arrays. Default: 350.')
-@click.option('--downratio','-dr',default=5,help='Specify the bottom quantile cutoff in array-num and nucleosoem positioning filtering process. Default: 5. ')
-@click.option('--upratio','-ur',default=95,help='Specify the top quantile cutoff in array-num and nucleosome positioning filtering process. Default: 95.')
+@click.option('--filterabnormal','-fabn',is_flag=True,help='Filter nucleosome with abnormal nucleosome spacing/regularity and positioning')
+@click.option('--downratio','-dr',default=5,help='Specify the bottom quantile cutoff in the nucleosome positioning filtering process. Default: 5. ')
+@click.option('--upratio','-ur',default=95,help='Specify the top quantile cutoff in the nucleosome positioning filtering process. Default: 95.')
 @click.option('--arraydown','-adown',default=1000,help='Specify the range of the nucleosome array for calculating nucleosoem regularity and spacing. '
                                                        'Currently only accept 1000 and 2000 as input. Default: 1000.')
-@click.option('--rankcoef','-rc',default=10,help='Specify the cofficient of the regularity rank for filtering unmatched nucleosome. '
+@click.option('--rankcoef','-rc',default=10,help='Specify the cofficient of the regularity rank for marking unmatched nucleosome. '
                                                  'The larger the coefficient, the looser the filter. Default: 10.')
 @click.option('--refhg19/--refhg38',default=True,help='Specify the reference genome. Default: built-in hg19.')
 @click.option('--writeinfo','-wi',is_flag=True,help='Write files contain the detail array-num, nucleosome regularity, spacing and positioning information.')
@@ -673,16 +762,24 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
 @click.option('--max/--mean',default=True,help='Select the method to calculate the regularity score')
 @click.option('--removetmpfile','-rmf',is_flag=True,help='remove temporary files')
 def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnumber,inputfileslist,statesregionfile,
-                  naregstates,updistal,upproximal,uppromoter,cutoffdist,downratio,upratio,arraydown,rankcoef,refhg19,
+                  naregstates,updistal,upproximal,uppromoter,cutoffdist,filterabnormal,downratio,upratio,arraydown,rankcoef,refhg19,
                   writeinfo,plotmark,max,removetmpfile):
     '''Filter nucleosomes by genomic location, array number, nucleosome regularity, spacing and positioning'''
+    # enter detail_info folder, if not exist, create one
+    cwd = os.getcwd()
+    if os.path.exists('detail_info'):
+        os.chdir('detail_info')
+    else:
+        os.makedirs('detail_info')
+        os.chdir('detail_info')
+
     if refhg19:
         refgene = hg19
     else:
         refgene = hg38
 
     background_state = list(bgstate)
-    statesfilelist_name = 'nuchmm_screen_init_result_files.txt'
+    statesfilelist_name = cwd + '/nuchmm_screen_init_result_files.txt'
     if inputfileslist is None:
         if file_check(statesfilelist_name):
             query_mark1 = query_yes_no("Detect %s exists! Do you want to use it?" % statesfilelist_name)
@@ -695,7 +792,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     else:
         statesfilelist_name = inputfileslist
 
-    stateregion_name = 'states_genomic_location.txt'
+    stateregion_name = cwd+'/states_genomic_location.txt'
     if statesregionfile is None:
         if file_check(stateregion_name):
             query_mark2 = query_yes_no("Detect %s exists! Do you want to use it?" % stateregion_name)
@@ -719,6 +816,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
         print('\n')
         print(celltype)
         cell_types.append(celltype)
+        pre_array_mark(nucstatefile,cutoffdist)
         # Genomic location filtering
         filter_file_list,count_nuc,count_gl_nuc = genomic_loc_filter(nucstatefile,background_state,stateregionfile,refgene,
                                                                      celltype,genesfile,updistal,upproximal,uppromoter,
@@ -732,7 +830,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
             name_element = file.split('_')
             gl_an_filtfile = name_element[0] + '_state_' + name_element[2] + '_gl_an_filt.bed'
             print('S'+name_element[2])
-            down_num, up_num, weighted_num = array_num_filter(file,gl_an_filtfile,downratio,upratio,cutoffdist,
+            down_num, up_num, weighted_num = array_num_filter(file,gl_an_filtfile,downratio,99,cutoffdist,
                                                               showarraylengthdistribute)
             count_an_nuc += count_file_rows(gl_an_filtfile)
             array_info_dict[celltype].append(str(weighted_num)+' ('+str(down_num)+'-'+str(up_num)+')')
@@ -751,16 +849,19 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
             down_aver[idx] += int(array_info.split()[1].split('-')[0].split('(')[1])
             up_aver[idx] += int(array_info.split()[1].split('-')[1].split(')')[0])
     weighted_aver = np.around(np.array(weighted_aver)/float(len(array_info_dict)),decimals=2)
-    down_aver = np.around(np.array(down_aver)/float(len(array_info_dict)),decimals=2)
-    up_aver = np.around(np.array(up_aver)/float(len(array_info_dict)),decimals=2)
+    down_aver = np.around(np.array(down_aver)/float(len(array_info_dict)),decimals=0)
+    up_aver = np.around(np.array(up_aver)/float(len(array_info_dict)),decimals=0)
 
     # less_3_nuc_state stores the potential NAstates
     less_3_nuc_state = {}
+    # states that allows single nucleosome
+    single_nuc_state = []
     for idx,state in enumerate(row_index):
         if weighted_aver[idx] < 3:
             less_3_nuc_state[state] = weighted_aver
         array_info_dict['Ave. No'].append(str(weighted_aver[idx])+' ('+str(down_aver[idx])+'-'+str(up_aver[idx])+')')
-
+        if down_aver[idx] <= 1:
+            single_nuc_state.append(int(state[1:]))
     # identify NA state
     # if naregstates is None:
     #     min_weight_aver = min(less_3_nuc_state.values())
@@ -769,6 +870,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     #     NA_nuc_state = list(naregstates)
     if naregstates is not None:
         NA_nuc_state = list(naregstates)
+
     if writeinfo:
         df_array = pd.DataFrame(array_info_dict,index=row_index)
         cols = cell_types[:]
@@ -783,17 +885,17 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     hzup = 5
     hzdown = 7
     gl_an_filt_file_path = '.'
-    like_wig_files_list = load_histonefile(like_wig_fileslist)
+    like_wig_files_list = load_histonefile(cwd+'/'+like_wig_fileslist)
     numcpu = multiprocessing.cpu_count()//2
     if numcpu > statesnumber:
         numcpu = statesnumber
     '''Filter the nucleosomes by their regularity and spacing'''
-    out_suffix = '_gl_an_resp_filt.bed'
+    out_suffix = '_gl_an_resp_marked.bed'
     # the output file name format is celltype + state_* + out_suffix
-    nuc_count,nuc_filt_count,resp_info_dict = regularity_spacing_filter(gl_an_filt_file_path,cell_types,like_wig_files_list,
-                                                                        background_state,numcpu,statesnumber,arrayup,arraydown,hzup,
-                                                                        hzdown,rankcoef,plotmark,max,writeinfo,cutoffdist,out_suffix,
-                                                                        removetmpfile,NA_nuc_state)
+    nuc_count,resp_info_dict, detail_spacing_dict,ave_spacing_dict = regularity_spacing_filter(gl_an_filt_file_path,cell_types,like_wig_files_list,
+                                                                            background_state,numcpu,statesnumber,arrayup,arraydown,hzup,
+                                                                            hzdown,rankcoef,plotmark,max,writeinfo,cutoffdist,out_suffix,
+                                                                            removetmpfile,NA_nuc_state)
 
     # the NAstates gl_an_filt file directly become gl_an_resp_filt file
     # for celltype in cell_types:
@@ -801,7 +903,8 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     #         subprocess.call("cp " + celltype + '_state_' + state + '_gl_an_filt.bed' + " " +
     #                         celltype + '_state_' + state + out_suffix)
 
-    filter_info_print('regularity and spacing',nuc_count,nuc_filt_count)
+    # filter_info_print('regularity and spacing',nuc_count,nuc_filt_count)
+
     # combine gl_an_resp_filt files
     gl_an_resp_filt_files = []
     for celltype in cell_types:
@@ -828,12 +931,13 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
             subprocess.call("sort -k1,1V -k2,2n -k3,3n " + tmp_file + " > " + combined_file_name, shell=True)
             subprocess.call("rm " + tmp_file, shell=True)
 
+    subprocess.call("rm " + '*bin300*', shell=True)
     if removetmpfile:
         for celltype in cell_types:
             subprocess.call("rm " + celltype + '_state_*' + out_suffix, shell=True)
             subprocess.call("rm " + celltype + '_state_*' + '_gl_filt.bed', shell=True)
             subprocess.call("rm " + celltype + '_state_*' + '_gl_an_filt.bed', shell=True)
-        subprocess.call("rm " + '*bin300*', shell=True)
+
 
     # nucleosome positioning filtering section
     print("\nFiltering by nucleosome positioning..")
@@ -847,12 +951,12 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
 
     # the files in inputfilelist and nucdetailfilelist should be in same order
     inputfile_list = gl_an_resp_filt_files
-    nucdetailfile_list = load_histonefile(nucpositionfiles)
+    nucdetailfile_list = load_histonefile(cwd+'/'+nucpositionfiles)
 
     outfile_list = []
     for file in inputfile_list:
         celltype = file.split('/')[-1].split('_')[0]
-        outfile_list.append(celltype+'_gl_an_resp_pos_filt.bed')
+        outfile_list.append(celltype+'_gl_an_resp_pos_marked.bed')
 
     info_wrm_dict = {}
     info_worm_dict = {}
@@ -861,61 +965,162 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     down_ratio = float(downratio)/100
     showinfo = False
     states_pos_total = {state:[] for state in states_list}
+    states_filt_pos_total = {state:[] for state in states_list}
     for idx,file in enumerate(inputfile_list):
         nuc_detail_file = nucdetailfile_list[idx]
         out_file = outfile_list[idx]
         celltype = file.split('/')[-1].split('_')[0]
         celltype_list.append(celltype)
         print(celltype)
-        nuc_count,nuc_filt_count,pos_mean_dict,states_pos = nuc_positioning_filter(file,out_file,states_list,
-                                                                        nuc_detail_file,k,up_ratio,down_ratio,
-                                                                        showinfo)
+        nuc_count,nuc_filt_count,pos_mean_dict,states_pos,states_filt_pos = \
+            nuc_positioning_filter(file,out_file,states_list,nuc_detail_file,k,up_ratio,down_ratio,showinfo)
+
         for state in states_pos:
             states_pos_total[state] += states_pos[state]
-
+            states_filt_pos_total[state] += states_filt_pos[state]
         info_wrm_dict[celltype] = pos_mean_dict['Mean_wrm']
         info_worm_dict[celltype] = pos_mean_dict['Mean_worm']
-        filter_info_print('nucleosome positioning',nuc_count,nuc_filt_count)
+        # filter_info_print('nucleosome positioning',nuc_count,nuc_filt_count)
 
-    if plotmark:
-        figname = "Nuc_pos_vio_" + get_time() + ".png"
-        plot_violin_nuc_pos(states_pos_total,states_list,spe_colors, figname)
+    print("Finalizing the outputs..")
+    final_file_name = []
+    for file in outfile_list:
+        celltype = file.split('/')[-1].split('_')[0]
+        print(celltype)
+        final_outname = cwd+ '/'+ celltype + '_gl_an_resp_pos_final.txt'
+        final_file_name.append(final_outname)
+        final_df = finalize_output(file,upratio,downratio,states_list,filterabnormal,single_nuc_state)
+        final_df.loc[:,'Local.pos'] = np.round(final_df.loc[:,'Local.pos'],3)
+        final_df.to_csv(final_outname,sep='\t',header=None,index=False)
+    # write merged file
+    print("Writing Array Info..")
+    for file in final_file_name:
+        celltype = file.split('/')[-1].split('_')[0]
+        outputname =  cwd+ '/'+ celltype + '_gl_an_resp_pos_final.arrayed.txt'
+        write_final_array(file,outputname)
+    
+    if filterabnormal:
+        print("Re-calculating the nucleosome organization")
+        resp_info_dict,filt_ave_spacing_dict, filt_detail_spacing_dict,filt_regularity_score_dict = \
+            filtered_statistic(final_file_name,resp_info_dict,statesnumber,background_state,max,cell_types,
+                               like_wig_files_list,numcpu,arraydown,removetmpfile,plotmark)
+        for state in states_list:
+                resp_info_dict['Post.Ave. Spacing'].append(filt_ave_spacing_dict['state_'+state])
+                resp_info_dict['Post.Regularity Score'].append(filt_regularity_score_dict['state_'+state])
+           
+        # Calculate the average positioning for each state
+        aver_wrm = np.zeros(len(df_row))
+        aver_worm = np.zeros(len(df_row))
+        for cell_type in info_wrm_dict:
+            aver_wrm += np.array(info_wrm_dict[cell_type])
+            aver_worm += np.array(info_worm_dict[cell_type])
+        aver_wrm = aver_wrm/len(info_wrm_dict)
+        aver_worm = aver_worm/len(info_worm_dict)
+        info_wrm_dict['Ave. Pos'] = aver_wrm.tolist()
+        info_worm_dict['Ave. Pos'] = aver_worm.tolist()
 
-    # Calculate the average positioning for each state
-    aver_wrm = np.zeros(len(df_row))
-    aver_worm = np.zeros(len(df_row))
-    for cell_type in info_wrm_dict:
-        aver_wrm += np.array(info_wrm_dict[cell_type])
-        aver_worm += np.array(info_worm_dict[cell_type])
-    aver_wrm = aver_wrm/len(info_wrm_dict)
-    aver_worm = aver_worm/len(info_worm_dict)
-    info_wrm_dict['Ave. Pos'] = aver_wrm.tolist()
-    info_worm_dict['Ave. Pos'] = aver_worm.tolist()
+        if plotmark:
+            figname = "Nuc_pos_vio_" + get_time() + ".png"
+            plot_violin_nuc_pos(states_pos_total,states_list,spe_colors,figname)
+            figname = "Nuc_pos_vio_" + get_time() + ".filt.png"
+            plot_violin_nuc_pos(states_filt_pos_total,states_list,spe_colors,figname)
+            
+        if writeinfo:
+            # write regularity score and average spacing
+            resp_info_dict_name = 'Pre_Post_Regularity_Spacing_' + get_time() +'.txt'
+            resp_info_dict_cols = ['Pre.Ave. Spacing','Post.Ave. Spacing','Pre.Regularity Score','Post.Regularity Score']
+            resp_df_info = pd.DataFrame(resp_info_dict,index=['S'+state for state in states_list])
+            resp_df_info = resp_df_info[resp_info_dict_cols].round(2)
+            resp_df_info.to_csv(resp_info_dict_name,sep='\t')
 
-    if writeinfo:
-        df_wrm = pd.DataFrame(info_wrm_dict,index=df_row)
-        df_worm = pd.DataFrame(info_worm_dict,index=df_row)
-        celltype_list.append('Ave. Pos')
-        cols = celltype_list[:]
-        df_wrm = df_wrm[cols].round(2)
-        df_worm = df_worm[cols].round(2)
-        out_filename_wrm = 'Nucleosome_positioning_information_wrm_' + get_time() +'.txt'
-        out_filename_worm = 'Nucleosome_positioning_information_worm_' + get_time() +'.txt'
-        df_wrm.to_csv(out_filename_wrm,sep='\t')
-        df_worm.to_csv(out_filename_worm,sep='\t')
+            # write detailed spacing information, might be deprecate in the formal version
+            detail_spacing_name = 'Detail_Spacing_Info' + get_time() + '.txt'
+            f_spacing = open(detail_spacing_name,'w')
+            f_spacing.write('Post-filter detail spacing information:\n')
+            for state in states_list:
+                output_filt_number = [str(value) for value in filt_detail_spacing_dict['state_'+state]]
+                while len(output_filt_number) < 4:
+                    output_filt_number.append(str(np.round(filt_ave_spacing_dict['state_'+state]/10,1)))
+                f_spacing.write('S'+state+'\t'+'\t'.join(output_filt_number)+'\n')
+            f_spacing.close()
 
-    print("Final filtered files are: " + '\t'.join(outfile_list))
+            df_wrm = pd.DataFrame(info_wrm_dict,index=df_row)
+            df_worm = pd.DataFrame(info_worm_dict,index=df_row)
+            celltype_list.append('Ave. Pos')
+            cols = celltype_list[:]
+            df_wrm = df_wrm[cols].round(2)
+            df_worm = df_worm[cols].round(2)
+            out_filename_wrm = 'Nucleosome_positioning_information_wrm_' + get_time() +'.txt'
+            df_wrm.to_csv(out_filename_wrm,sep='\t')
+            out_filename_worm = 'Nucleosome_positioning_information_worm_' + get_time() +'.txt'
+            df_worm.to_csv(out_filename_worm,sep='\t')
+    else:
+
+        # Calculate the average positioning for each state
+        aver_worm = np.zeros(len(df_row))
+        for cell_type in info_wrm_dict:
+            aver_worm += np.array(info_worm_dict[cell_type])
+        aver_worm = aver_worm/len(info_worm_dict)
+        info_worm_dict['Ave. Pos'] = aver_worm.tolist()
+
+        if plotmark:
+            figname = "Nuc_pos_vio_" + get_time() + ".png"
+            plot_violin_nuc_pos(states_pos_total,states_list,spe_colors,figname)
+
+        if writeinfo:
+            # write regularity score and average spacing
+            resp_info_dict_name = 'Regularity_Spacing_' + get_time() +'.txt'
+            resp_info_dict_cols = ['Ave. Spacing','Regularity Score']
+            resp_df_info = pd.DataFrame(resp_info_dict,index=['S'+state for state in states_list])
+            resp_df_info.columns = resp_info_dict_cols
+            resp_df_info = resp_df_info[resp_info_dict_cols].round(2)
+            resp_df_info.to_csv(resp_info_dict_name,sep='\t')
+
+        resp_info_dict['Post.Ave. Spacing'] = resp_info_dict['Pre.Ave. Spacing']
+        resp_info_dict['Post.Regularity Score'] = resp_info_dict['Pre.Regularity Score']
+
+        if writeinfo:
+            # write detailed spacing information, might be deprecate in the formal version
+            detail_spacing_name = 'Detail_Spacing_Info' + get_time() + '.txt'
+            f_spacing = open(detail_spacing_name,'w')
+            f_spacing.write('Post-filter detail spacing information:\n')
+            for state in states_list:
+                output_filt_number = [str(value) for value in detail_spacing_dict['state_'+state]]
+                while len(output_filt_number) < 4:
+                    output_filt_number.append(str(np.round(ave_spacing_dict['state_'+state]/10,1)))
+                f_spacing.write('S'+state+'\t'+'\t'.join(output_filt_number)+'\n')
+            f_spacing.close()
+            
+            df_worm = pd.DataFrame(info_worm_dict,index=df_row)
+            celltype_list.append('Ave. Pos')
+            cols = celltype_list[:]
+            df_worm = df_worm[cols].round(2)
+            out_filename_worm = 'Nucleosome_positioning_information_wofilt_' + get_time() +'.txt'
+            df_worm.to_csv(out_filename_worm,sep='\t')
+        
+    # remove gl_an_resp_filt_files and gl_an_resp_pos_filt_files
+    for file in gl_an_resp_filt_files:
+        subprocess.call("rm {}".format(file),shell=True)
+    for file in outfile_list:
+        subprocess.call("rm {}".format(file),shell=True)
+    
+    print("Writing Final Table..")
     genomic_loc = []
     for line in load_histonefile(stateregion_name):
         genomic_loc.append('/'.join(line.strip().split()[1:]))
-    final_table_name_post = 'functional_nucleosome_state_post.txt'
+    final_table_name_post = cwd+'/'+'functional_nucleosome_state_post.txt'
+    final_file_name.append(final_table_name_post)
     final_info_dict_post = {}
     final_cols = ['Genomic Location','Ave. No. of Nucs','Ave. Spacing','Regularity score', 'Degree of Positioning']
     final_info_dict_post['Ave. No. of Nucs'] = array_info_dict['Ave. No']
     final_info_dict_post['Genomic Location'] = genomic_loc
+    # filter situation is considered in NucHMM_feature_screen line1699-1701
     final_info_dict_post['Ave. Spacing'] = np.round(resp_info_dict['Post.Ave. Spacing'],2)
     final_info_dict_post['Regularity score'] = np.round(resp_info_dict['Post.Regularity Score'],2)
-    final_info_dict_post['Degree of Positioning'] = np.round(info_wrm_dict['Ave. Pos'],2)
+    if filterabnormal:
+        final_info_dict_post['Degree of Positioning'] = np.round(info_wrm_dict['Ave. Pos'],2)
+    else:
+        final_info_dict_post['Degree of Positioning'] = np.round(info_worm_dict['Ave. Pos'],2)
     try:
         df_final_info_post = pd.DataFrame(final_info_dict_post,index=df_row)
     except ValueError:
@@ -926,7 +1131,6 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
 
     df_final_info_post = df_final_info_post[final_cols]
     df_final_info_post.to_csv(final_table_name_post,sep='\t')
-    print("Final nucleosome feature tables is %s" % (final_table_name_post))
 
     if writeinfo:
         final_table_name_pre = 'functional_nucleosome_state_pre.txt'
@@ -939,7 +1143,11 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
         df_final_info_pre = pd.DataFrame(final_info_dict_pre,index=df_row)
         df_final_info_pre = df_final_info_pre[final_cols]
         df_final_info_pre.to_csv(final_table_name_pre,sep='\t')
-        print("Final nucleosome feature tables are %s and %s" % (final_table_name_post,final_table_name_pre))
+        print("Final nucleosome feature table is %s" % (final_table_name_post))
+
+    print("Final files are: ")
+    for idx,file in enumerate(final_file_name):
+        print("{}. {}".format(str(idx+1),file))
     print("Screen Finish!")
 
 @cli.command(help_priority=6)
@@ -948,7 +1156,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
               help='Input histone_marks.txt file that contains all histone marks used in nuchmm-init.')
 @click.option('--matrixcolor','-mc',default=2, help='Specify the color palette of the matrix. 0 is red-white; '
                                                     '1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.')
-@click.option('--markthreshold','-mt',default=1,help='Specify the threshold to show the probability in the matrix. Default: 1 (not showing).')
+@click.option('--markthreshold','-mt',default=1.1,help='Specify the threshold to show the probability in the matrix. Default: 1 (not showing).')
 @click.option('--transmat','-tmat',type=click.Path(),
               help='Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png')
 @click.option('--markstatemat','-msmat',type=click.Path(),
@@ -957,8 +1165,9 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
 @click.option('mark','--M',is_flag=True,help='Divide the element of emission probability matrix by the number of the mark in that observation. '
                                              'Very strong assumption. Not recommend use. ')
 @click.option('--writematrix', is_flag=True, help='Write mark_state matrix and transistion probability matrix in txt files.')
-def matrix_visualize(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,emitmat,matrixcolor,markthreshold):
+@click.option('--inputmatrix', '-im',type=click.Path(),help='Visualize input mark_state matrix')
+def matrix_visualize(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,emitmat,matrixcolor,markthreshold,inputmatrix):
     '''Visualize the Transition and Mark-state matrix.'''
-    if markthreshold == 0.25:
-        print("Use default mark threshold 0.25, -mt command is used to specify mark threshold.")
-    HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,matrixcolor,emitmat,markthreshold)
+    # if markthreshold == 0.25:
+    #     print("Use default mark threshold 0.25, -mt command is used to specify mark threshold.")
+    HMM_matrix_visualization(rawhmmfile,histonelistfile,transmat,markstatemat,mark,writematrix,matrixcolor,emitmat,markthreshold,inputmatrix)

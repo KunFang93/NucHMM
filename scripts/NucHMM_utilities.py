@@ -28,7 +28,6 @@ def get_time():
     dt_string = now.strftime("%d.%m.%Y_%H.%M.%S")
     return dt_string
 
-
 def Chr2Num (Chr):
     '''
     Transfer chromosome to number
@@ -44,7 +43,6 @@ def Chr2Num (Chr):
     else:
         New = 0
     return New
-
 
 def process_read(geneseg, pos_diction, POS, READ, Start_End, chr):
     '''
@@ -77,7 +75,6 @@ def process_read(geneseg, pos_diction, POS, READ, Start_End, chr):
         Read_seq[cellnum] = READ[cellnum][chr][slice(Pos_index[cellnum][0], Pos_index[cellnum][0] + Num[cellnum])]
     return Num, Read_seq, S_and_E
 
-
 def sort_chrom_coor1_coor2(input):
     '''
     Sort the key in dictionary according the chromosome -> start -> end (chr1,chr2...chr10...)
@@ -85,7 +82,7 @@ def sort_chrom_coor1_coor2(input):
     :return: sorted_key_list
     '''
     sorted_key = sorted(input, key=lambda x: (Chr2Num(x.partition('_')[0]),int(x.partition('_')[2].partition('_')[0]),
-                                                int(x.partition('_')[2].partition('_')[2])))
+                                                int(x.partition('_')[2].partition('_')[2].partition('_')[0])))
     return sorted_key
 
 
@@ -238,7 +235,7 @@ class ShowProcess:
     The class of handling the process
     """
     # init function, need to know the max steps that need to process
-    def __init__(self, file, max_arrow=50, infoDone = 'Loading Finish!'):
+    def __init__(self, file, max_arrow=50, infoDone = ''):
         self.max_steps = int(subprocess.check_output('wc -l ' + file, shell=True).split()[0])
         self.i = 0
         self.infoDone = infoDone

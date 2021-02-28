@@ -1,4 +1,6 @@
 import sys
+import pandas as pd
+import numpy as np
 from NucHMM_common_data import hg19
 from NucHMM_utilities import ismember,sort_chrom_coor1_coor2,ShowProcess
 from collections import defaultdict
@@ -212,20 +214,24 @@ def load_assignedtf_file(assignedfile):
     Start_End = defaultdict(list)
     count_input = 0
     for line in assignedfile:
-        count_input += 1
-        sys.stdout.write('\rFile line: ' + str(count_input))
-        L = line.strip().split()
-        L_start = int(L[1])
-        L_end = int(L[2])
-        '''minus one to match the later index'''
-        L_mid = (L_start + L_end) // 2
-        L_chr = L[0]
-        L_read = L[3]
-        # d_mid_count_hct[str(L_mid)+'_'+L_chr] = L_read
-        Start_End[L_chr + '_' + str(L_mid)].append(L_start)
-        Start_End[L_chr + '_' + str(L_mid)].append(L_end)
-        POS[L_chr].append(L_mid)
-        READ[L_chr].append(L_read)
+        try:
+            count_input += 1
+            sys.stdout.write('\rFile line: ' + str(count_input))
+            L = line.strip().split()
+            L_start = int(L[1])
+            L_end = int(L[2])
+            '''minus one to match the later index'''
+            L_mid = (L_start + L_end) // 2
+            L_chr = L[0]
+            L_read = L[3]
+            # d_mid_count_hct[str(L_mid)+'_'+L_chr] = L_read
+            Start_End[L_chr + '_' + str(L_mid)].append(L_start)
+            Start_End[L_chr + '_' + str(L_mid)].append(L_end)
+            POS[L_chr].append(L_mid)
+            READ[L_chr].append(L_read)
+        except IndexError:
+            # skip the blank line in cis_element process that produced by paste..
+            continue
     assignedfile.close()
     print('\n')
     return POS, READ, Start_End
@@ -288,6 +294,7 @@ def write_precomp_file(direction, dict_seg, seg_name, count_out, L4_mark, cell_n
                    number_of_cell, chr_index, num_seg ,tmp_read,tmp_pos,outputfile):
     '''dict_seg[seg_name][2+2*number_of_cell+cell_num][index][0] is the start of this nuc and
     dict_seg[seg_name][2+2*number_of_cell+cell_num][index][1] is the end of this nuc'''
+
     try:
         if direction == 'for':
             diff = dict_seg[seg_name][2+cell_num] - max(dict_seg[seg_name][2:2+number_of_cell])
@@ -337,15 +344,16 @@ def write_precomp_file(direction, dict_seg, seg_name, count_out, L4_mark, cell_n
 
             if num_seg == 3:
                 if diff >= 0:
-                    count_out += 1
                     dict_seg[seg_name][2+number_of_cell+cell_num].reverse()
                     dict_seg[seg_name][2+2*number_of_cell+cell_num].reverse()
                     for index, read in enumerate(dict_seg[seg_name][2+number_of_cell+cell_num]):
+                        count_out += 1
                         outputfile.write(str(chr_index) + '\t' + str(count_out) + '\t' + str(read) + '\t'
                                           + str(dict_seg[seg_name][2+2*number_of_cell+cell_num][index][0]) + '\t' +
                                           str(dict_seg[seg_name][2+2*number_of_cell+cell_num][index][1]) + '\n')
                 else:
                     for i in range(-diff):
+                        print(count_out)
                         count_out += 1
                         outputfile.write(str(chr_index) + '\t' + str(count_out) + '\t' + str(0) + '\n')
                     dict_seg[seg_name][2+number_of_cell+cell_num].reverse()
@@ -423,8 +431,8 @@ def write_multi_statesfile_from_dict(diction,outputfile_suffix,cell_type):
         for key in sorted_key:
             nuc_count += 1
             line_info = key.split('_')
-            line_info.append(state)
-            f.write('\t'.join(line_info)+'\n')
+            outline = line_info[:3] + [state] + [line_info[-1]]
+            f.write('\t'.join(outline)+'\n')
         f.close()
     return nuc_count
 
@@ -432,4 +440,88 @@ def write_prep_resultlist(fq_info_dict,outfilename):
     with open(outfilename,'w') as out_file:
         for file in fq_info_dict['final_file_list']:
             out_file.write(file+'\n')
+    out_file.close()
+
+# def finalize_output(gl_an_resp_filt_file,cutoffdist):
+#     # merge individual nucleosoem state to nucleosome state region in gl_an_resp_filt_file
+#     print("Loading..")
+#     input_df = pd.read_csv(gl_an_resp_filt_file,sep='\t',header=None)
+#     print("Processing..")
+#     input_df.loc[:,'dyad'] =(input_df.loc[:,1] + input_df.loc[:,2])/2
+#     input_df.loc[:,'spacing'] = input_df.loc[:,'dyad'].diff()
+#     # The spacing of the 1st nucleosome in a chromosome should be same as the spacing value of the 2nd nucleosome
+#     input_df = input_df.fillna(0)
+#     input_df.loc[input_df.loc[:,'spacing'] < 0,'spacing'] = \
+#         list(input_df.loc[input_df.loc[input_df.loc[:,'spacing'] < 0,'spacing'].index.values + 1,'spacing'])
+#     input_df.loc[0,'spacing']= input_df.loc[1,'spacing']
+#     split_idx = input_df.loc[input_df.loc[:,'spacing'] > cutoffdist,:].index.values
+#     input_df_split = np.split(input_df,split_idx)
+#     final_dict = {'chrom':[],'start':[],'end':[],'state':[],'Ave.Local.pos':[],'Ave.Local.spa':[]}
+#     for idx, split_df in enumerate(input_df_split):
+#         sys.stdout.write("\r{}/{}".format(idx,len(input_df_split)))
+#         if idx == 0:
+#             # always empty df
+#             continue
+#         else:
+#             gb = split_df.groupby(3)
+#             states_array = [gb.get_group(x) for x in gb.groups]
+#             for idy,state_array in enumerate(states_array):
+#                 current_chrom = state_array.loc[state_array.index[0],0]
+#                 current_start = state_array.loc[state_array.index[0],1]
+#                 current_end = state_array.loc[state_array.index[-1],2]
+#                 current_state = state_array.loc[state_array.index[0],3]
+#                 current_pos = state_array[4].mean()
+#                 if idy == 0:
+#                     current_spa = state_array['spacing'][1:].mean()
+#                 else:
+#                     current_spa = state_array['spacing'].mean()
+#                 final_dict['chrom'].append(current_chrom)
+#                 final_dict['start'].append(current_start)
+#                 final_dict['end'].append(current_end)
+#                 final_dict['state'].append(current_state)
+#                 final_dict['Ave.Local.pos'].append(current_pos)
+#                 final_dict['Ave.Local.spa'].append(current_spa)
+#     final_df = pd.DataFrame.from_dict(final_dict)
+#     final_df.loc[:,'Ave.Local.pos'] = np.round(final_df.loc[:,'Ave.Local.pos'])
+#     final_df.loc[:,'Ave.Local.spa'] = np.round(final_df.loc[:,'Ave.Local.spa'])
+#     return final_df
+
+def write_final_array(file,outname):
+    '''
+    merged file cols: chr start end state Ave.Local.pos Ave.Local.spa
+    :param file: 
+    :param outname: 
+    :return: 
+    '''
+    with open(file,'r') as input_file, open(outname, 'w') as out_file:
+        for line in input_file:
+            line_info = line.strip().split()
+            line_chr = line_info[0]
+            line_start = line_info[1]
+            line_end = line_info[2]
+            line_state = line_info[3]
+            line_pos = float(line_info[4])
+            line_spa = float(line_info[5])
+            line_array_mark = line_info[6]
+            if line_array_mark == 'array-start':
+                array_pos = [line_pos]
+                array_spa = [line_spa]
+                array_chr = line_chr
+                array_start = line_start
+                array_state = line_state
+            elif line_array_mark.split('-')[-1] != 'end':
+                array_pos.append(line_pos)
+                array_spa.append(line_spa)
+            elif line_array_mark.split('-')[-1] == 'end':
+                array_end = line_end
+                array_pos.append(line_pos)
+                array_spa.append(line_spa)
+                pos_ave = np.round(np.mean(array_pos),3)
+                spa_ave = np.round(np.mean(array_spa),3)
+                outline = [array_chr,array_start,array_end,array_state,str(pos_ave),str(spa_ave)]
+                out_file.write('\t'.join(outline) +'\n')
+            elif line_array_mark == 'single':
+                outline = [line_chr,line_start,line_end,line_state,str(line_pos),str(line_spa)]
+                out_file.write('\t'.join(outline) +'\n')
+    input_file.close()
     out_file.close()

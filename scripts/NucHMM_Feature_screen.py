@@ -13,7 +13,7 @@ from scipy import signal, interpolate
 from NucHMM_common_data import spe_colors, Histone_location, hg19, hg38
 from NucHMM_Visualization import emit2mark, plot_distribution
 from NucHMM_utilities import Chr2Num, file_check, query_yes_no, boundary_check, bedops_diff, get_time, count_file_rows
-from NucHMM_utilities import outlier_threshold, input_new_name
+from NucHMM_utilities import outlier_threshold, input_new_name, filter_info_print
 from NucHMM_Load_Write_files import load_rawhmm, load_histonefile, load_states_file, load_output_file
 from NucHMM_Load_Write_files import load_nuc_detail_file, load_genome_size_file, write_multi_statesfile_from_dict
 from NucHMM_states_coverage import create_state_coverage_files, file2dict
@@ -706,33 +706,20 @@ def genomic_loc_filter(nucstatefile,background_state,state_regions_file,refgene,
     '''
 
     # step1: divide the merged.srt.unique.state.bed to state-specific.bed
-    nucstate_dict = defaultdict(list)
-    print('Reading nuclsoeome state file..')
-    count_nuc = 0
-    with open(nucstatefile,'r') as nucstate_file:
-        for line in nucstate_file:
-            count_nuc += 1
-            line_info = line.strip().split()
-            line_chr = line_info[0]
-            line_start = line_info[1]
-            line_end = line_info[2]
-            # line_state should be same type with input background state
-            line_state = line_info[3]
-            value = '_'.join([line_chr,line_start,line_end])
-            # the value list is ordered, background states have been removed
-            if line_state not in background_state:
-                nucstate_dict[line_state].append(value)
-    nucstate_file.close()
-    print('Writing separate state file..')
+    print('Reading and Splitting nuclsoeome state file..')
+    nucstatefile_df = pd.read_csv(nucstatefile,sep='\t',header=None)
+    count_nuc = len(nucstatefile_df)
+    gb = nucstatefile_df.groupby(3)
+    nucstatefile_split_df = [gb.get_group(x) for x in gb.groups]
+    all_states = list(set(nucstatefile_df[3]))
     # make the order from small number to large number, import for later on array information writing
-    state_files_name = [celltype+'_state_'+ state + '.bed' for state in sorted(nucstate_dict.keys(), key=lambda x:int(x))]
-    for file in state_files_name:
-        with open(file, 'w') as out_file:
-            current_state = file.split('.')[0].split('_')[-1]
-            for nuc in nucstate_dict[current_state]:
-                out_line = nuc.split('_')
-                out_file.write('\t'.join(out_line)+'\t'+current_state+'\n')
-        out_file.close()
+    state_files_name = [celltype+'_state_'+ str(state) + '.bed' for state in sorted(all_states) if str(state) not in background_state]
+    for split_df in nucstatefile_split_df:
+        state = str(list(set(split_df[3]))[0])
+        if state in background_state:
+            continue
+        else:
+            split_df.to_csv(celltype+'_state_'+ state + '.bed',header=False,index=False,sep='\t')
 
     # step2: create basic region file
     create_ref_filter_files(genesfile,up_distal,up_proximal,up_promoter,refgene)
@@ -791,6 +778,25 @@ def genomic_loc_filter(nucstatefile,background_state,state_regions_file,refgene,
 
     return filtered_files_list,count_nuc,count_gl_nuc
 
+def pre_array_mark(nucstatefile,cutoffdist):
+    input_df = pd.read_csv(nucstatefile,sep='\t',header=None)
+    input_df.loc[:,'dyad'] =(input_df.loc[:,1] + input_df.loc[:,2])/2
+    input_df.loc[:,'spacing'] = input_df.loc[:,'dyad'].diff()
+    # The spacing of the 1st nucleosome in a chromosome should be same as the spacing value of the 2nd nucleosome
+    input_df = input_df.fillna(0)
+    input_df.loc[input_df.loc[:,'spacing'] < 0,'spacing'] = \
+        list(input_df.loc[input_df.loc[input_df.loc[:,'spacing'] < 0,'spacing'].index.values + 1,'spacing'])
+    input_df.loc[0,'spacing']= input_df.loc[1,'spacing']
+    # mark array
+    input_df.loc[:,'array_mark'] = 'array'
+    # single nucleosome should have gaps both side
+    single_bool = list(input_df.loc[:,'spacing']>cutoffdist) and \
+                  (list(input_df.loc[:,'spacing']>cutoffdist)[1:]+[list(input_df.loc[:,'spacing']>cutoffdist)[1:][-1]])
+    input_df.loc[single_bool,'array_mark'] = 'single'
+
+    input_df = input_df[[0,1,2,3,'array_mark']]
+    input_df.to_csv(nucstatefile,sep='\t',index=False,header=False)
+
 # genomic location filter end
 
 # array number filter start
@@ -825,6 +831,9 @@ def find_up_down_array_num(diction_array_num,down_ratio_limit,up_ratio_limit,sho
             current_ratio = round(current_ratio,3)
             sum_ratio = round(sum_ratio,3)
             print("array length is %d, current ratio is %f, and sum ratio is %f " % (array_num,current_ratio,sum_ratio))
+    # in case up_ratio_limit too large and make upper_number == 0, manually assign the max number
+    if upper_number == 0:
+        upper_number = np.max(list(diction_array_num.keys()))
     for array_num in sorted(diction_array_num.keys()):
         if array_num >= down_number:
             weighted_num += array_num * len(diction_array_num[array_num])
@@ -839,7 +848,7 @@ def array_num_filter(gl_filtfile,gl_an_filtfile,down_ratio_limit,up_ratio_limit,
         # acquire stats information of this state
         # diction_array_num: key: array number and value: a dictionary with key: the count number of this certain length array,
         # and value: the chr, start, end information of this array. for example diction_array_num[3][3] represent
-        # the 3rd(in second []) found array with length 3(in the first [])
+        # the 3rd(in second []) array with length 3(in the first [])
         # compare to original codes, we don't consider the nuc_number here for minimizing the input file we need
         diction_array_num = {}
         count = 0
@@ -853,8 +862,9 @@ def array_num_filter(gl_filtfile,gl_an_filtfile,down_ratio_limit,up_ratio_limit,
             L_start = L[1]
             L_end = L[2]
             L_state = L[3]
+            L_array_mark = L[4]
             L_dyad = (int(L_start) + int(L_end))//2
-            L_info = L_chr + '_' + L_start + '_' + L_end + '_' + L_state
+            L_info = L_chr + '_' + L_start + '_' + L_end + '_' + L_state + '_' + L_array_mark
             # initialize last parameters
             if count == 0:
                 L_last_chr = L_chr
@@ -897,9 +907,21 @@ def array_num_filter(gl_filtfile,gl_an_filtfile,down_ratio_limit,up_ratio_limit,
                 current_array.append(L_info)
                 L_last_chr = L_chr
     input_file.close()
-
-    down_number,upper_number,weighted_number = find_up_down_array_num(diction_array_num,down_ratio_limit,up_ratio_limit,
+    # remove single nucleosome but marked by array e.g. 4 9 9 9 9 4 4 4, first 4 in an array with array_num 1 but marked in array
+    diction_array_num_new = diction_array_num.copy()
+    count = 0
+    array1_dict = {}
+    for array in diction_array_num[1]:
+        array_info = diction_array_num[1][array][0].split('_')
+        if array_info[-1] == 'array':
+            count +=1
+        else:
+            array1_dict[array] = diction_array_num[1][array]
+    diction_array_num_new[1] = array1_dict
+    # print("{} pop up {}".format(gl_filtfile,count))
+    down_number,upper_number,weighted_number = find_up_down_array_num(diction_array_num_new,20,up_ratio_limit,
                                                                       show_distribute_mark)
+    print("{}: down {}; up {}; weighted {}".format(gl_filtfile,down_number,upper_number,weighted_number))
     if sys.version_info <(3,0):
         keys = diction_array_num.keys()
         print('Filtering the outlier arrays..')
@@ -931,7 +953,7 @@ def array_num_filter(gl_filtfile,gl_an_filtfile,down_ratio_limit,up_ratio_limit,
 # array number filter end
 
 # nucleosome positioning filter start
-def nuc_pos_state_outlier(nucs_coor,states_list,positioning_score_list,nuc_states,up_ratio,down_ratio,k,showinfo):
+def nuc_pos_state_outlier(nucs_coor,states_list,positioning_score_list,nuc_states,nuc_resp_marks,up_ratio,down_ratio,k,showinfo):
     '''
     Screen out some nucleosome outliers according to the positioning
     :param positoning_socre_list:
@@ -941,6 +963,7 @@ def nuc_pos_state_outlier(nucs_coor,states_list,positioning_score_list,nuc_state
 
     # separate the states
     states_pos_score = defaultdict(list)
+    states_filt_pos = {}
     for idx,state in enumerate(nuc_states):
         states_pos_score[state].append(positioning_score_list[idx])
 
@@ -962,28 +985,32 @@ def nuc_pos_state_outlier(nucs_coor,states_list,positioning_score_list,nuc_state
 
         state_worm_pos_mean = np.mean(states_pos_score[state])
         tmp_score = [value for value in states_pos_score[state] if value <= up_limit or value >= down_limit]
+        states_filt_pos[state] = tmp_score
         state_wrm_pos_mean = np.mean(tmp_score)
         pos_mean_dict['Mean_wrm'].append(state_wrm_pos_mean)
         pos_mean_dict['Mean_worm'].append(state_worm_pos_mean)
 
-        if showinfo:
-            print("S%s mean without remove outlier %3f" % (state,state_worm_pos_mean))
-            print("S%s mean with remove outlier %3f" % (state,state_wrm_pos_mean))
+        # if showinfo:
+        #     print("S%s mean without remove outlier %3f" % (state,state_worm_pos_mean))
+        #     print("S%s mean with remove outlier %3f" % (state,state_wrm_pos_mean))
 
-    # filtering step
+    # marking step
     new_pos_score_list = []
     new_nuc_coor = []
     new_nuc_states = []
+    new_nuc_resp_marks= []
+    new_nuc_pos_mark = []
     for idx,pos_score in enumerate(positioning_score_list):
         current_state = nuc_states[idx]
+        new_pos_score_list.append(pos_score)
+        new_nuc_coor.append(nucs_coor[idx])
+        new_nuc_states.append(nuc_states[idx])
+        new_nuc_resp_marks.append(nuc_resp_marks[idx])
         if pos_score > states_cutoff[current_state][1] or pos_score < states_cutoff[current_state][0]:
-            continue
+            new_nuc_pos_mark.append('out_'+'q'+str(down_ratio)+'-'+'q'+str(up_ratio))
         else:
-            new_pos_score_list.append(pos_score)
-            new_nuc_coor.append(nucs_coor[idx])
-            new_nuc_states.append(nuc_states[idx])
-
-    return new_pos_score_list,new_nuc_coor,new_nuc_states,pos_mean_dict
+            new_nuc_pos_mark.append('within_'+'q'+str(down_ratio)+'-'+'q'+str(up_ratio))
+    return new_pos_score_list,new_nuc_coor,new_nuc_states,pos_mean_dict,new_nuc_resp_marks,new_nuc_pos_mark,states_filt_pos
 
 def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nuc_detail_file,k,up_ratio,down_ratio,showinfo):
 
@@ -998,6 +1025,7 @@ def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nu
     nucs_pvalpeak = []
     nucs_pvalvalley = []
     nuc_states = []
+    nuc_resp_marks = []
     nucs_coor = []
     # read the post-array-filtered file
     nuc_count = 0
@@ -1009,7 +1037,12 @@ def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nu
             line_start = line_info[1]
             line_end = line_info[2]
             line_state = line_info[3]
+            try:
+                line_resp_mark = line_info[4]
+            except IndexError:
+                line_resp_mark = 'None'
             nuc_states.append(line_state)
+            nuc_resp_marks.append(line_resp_mark)
             nucs_coor.append(line_chr+'_'+line_start+'_'+line_end)
             nuc_count += 1
             sys.stdout.write('\rRead Line:'+str(nuc_count))
@@ -1069,14 +1102,10 @@ def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nu
     positioning_score = (positioning_score/score_up_limit)*20
     print("Calculating Finish!")
 
-    # filtering outlier nucleosomes
-    print("Filtering outlier nucleosomes..")
-
-    new_pos_score_list,new_nuc_coor,new_nuc_states,pos_mean_dict = nuc_pos_state_outlier(nucs_coor,states_list,
-                                                                                         positioning_score,
-                                                                                         nuc_states,up_ratio,
-                                                                                         down_ratio,k,showinfo)
-
+    # marking outlier nucleosomes
+    print("Marking outlier nucleosomes..")
+    new_pos_score_list,new_nuc_coor,new_nuc_states,pos_mean_dict,new_nuc_resp_marks,new_nuc_pos_mark,states_filt_pos = \
+        nuc_pos_state_outlier(nucs_coor,states_list,positioning_score,nuc_states,nuc_resp_marks,up_ratio,down_ratio,k,showinfo)
 
     print("Writing Output file..")
     nuc_filt_count = 0
@@ -1091,12 +1120,14 @@ def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nu
             line_end = coor_info[2]
             line_state = new_nuc_states[idx]
             line_pos_score = round(new_pos_score_list[idx],3)
+            line_resp_mark = new_nuc_resp_marks[idx]
+            line_pos_mark = new_nuc_pos_mark[idx]
             states_pos[line_state].append(line_pos_score)
-            out_line = [line_chr,line_start,line_end,line_state,str(line_pos_score)]
+            out_line = [line_chr,line_start,line_end,line_state,str(line_pos_score),line_resp_mark,line_pos_mark]
             output_file.write('\t'.join(out_line)+'\n')
     output_file.close()
     print('\n')
-    return nuc_count,nuc_filt_count,pos_mean_dict,states_pos
+    return nuc_count,nuc_filt_count,pos_mean_dict,states_pos,states_filt_pos
 # nucleosome positioning filter end
 
 # nucleosome regularity and spacing filter start
@@ -1214,13 +1245,18 @@ def create_file_for_regs_spacing(gl_an_filt_file_path,inputfile_suffix,outputfil
             print("Output file is %s" % outfile_name)
             if file_check(outfile_name):
                 if remember_mark1:
-                    query_mark = query_yes_no(outfile_name + ' already exists, do you want to overwrite it?')
-                    if query_mark:
+                    query_mark_output = query_yes_no(outfile_name + ' already exists, do you want to overwrite it?')
+                    query_mark2 = query_yes_no('Save the choice for later state_region?')
+                    if query_mark2:
+                        remember_mark1 = False
+                    if query_mark_output:
                         select_array_region(inputfile_name,outfile_name,region_up,region_down)
                     else:
-                        query_mark2 = query_yes_no('Save the choose for later state_region?')
-                        if query_mark2:
-                            remember_mark1 = False
+                        print("Use the old %s " % outfile_name)
+                else:
+                    if query_mark_output and query_mark2:
+                        select_array_region(inputfile_name,outfile_name,region_up,region_down)
+                    else:
                         print("Use the old %s " % outfile_name)
             else:
                 select_array_region(inputfile_name,outfile_name,region_up,region_down)
@@ -1321,6 +1357,10 @@ def cal_regularity_spacing(states_list,celltypelist,array_up,array_down,hz_up,hz
         for state in States:
             selected_region_sum[state] += cover_info[state][region_up:region_down]
 
+    # extract selected_region_sum for in silico strandard comparison (banned in release version )
+    # array_out = './array_signal.txt'
+    # array_df = pd.DataFrame(selected_region_sum)
+    # array_df.to_csv(array_out)
 
     ave_spacing_dict = {}
     detail_spacing_dict = {}
@@ -1456,7 +1496,7 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                                                                                           plotmark,regularity_method,
                                                                                           '_bin300_total.txt','')
 
-    # step3 filter the abnormal nucleosomes in array based on the spacing and regularity we calculated from step2
+    # step3 identify the abnormal nucleosomes in array based on the spacing and regularity we calculated from step2
     # step3.1 rank the states by their regualrity score, the state with the smallest regularity score is rank1
     state_regularity_rank = {}
     rank = 1
@@ -1464,7 +1504,7 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
         state_regularity_rank[key] = rank
         rank += 1
 
-    # step3.2 filtering according to the following rule the spacing between the nucleosomes
+    # step3.2 identify according to the following rule the spacing between the nucleosomes
     # will be nucleosome spacing (result from step2 )  +/- interval * (5 + regularity rank * rank_coefficient) bp (inspired by paper :
     # "Fuzziness and Noise in nucleosomal architecture")
     nuc_count = 0
@@ -1490,7 +1530,7 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                         line_last_dyad = line_dyad
                         array_count = 1
                         line_last_chr = line_chr
-                        current_array_key = [key]
+                        current_array_key = [key + '_' + 'array-start']
                         current_array_state = [line_state]
                         continue
                     current_spacing = line_dyad - line_last_dyad
@@ -1501,8 +1541,11 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                         line_last_dyad = line_dyad
                         line_last_chr = line_chr
                         if current_spacing < ref_spacing_low or current_spacing > ref_spacing_high:
-                            continue
+                            key = key + '_' + 'unphased-' + str(array_count)
+                            current_array_key.append(key)
+                            current_array_state.append(state)
                         else:
+                            key = key + '_' + 'phased-' + str(array_count)
                             current_array_key.append(key)
                             current_array_state.append(state)
                     # remove all the nucleosome in array
@@ -1515,55 +1558,156 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                     #         current_array_state.append(line_state)
                     #         continue
                     else:
+                        # in case there is single nucleosome
+                        if len(current_array_key) == 1:
+                            end_key = current_array_key[-1].split('_')[:-1] + ['single']
+                            current_array_key = ['_'.join(end_key)]
+                        else:
+                            end_key = current_array_key[-1].split('_')[:-1] + [current_array_key[-1].split('_')[-1].split('-')[0]+'-end']
+                            current_array_key[-1] = '_'.join(end_key)
                         if 0 not in current_array_key:
                             for idx,state_key in enumerate(current_array_state):
                                 nuc_cell_filtered_dict[celltype][state_key].append(current_array_key[idx])
                         current_array_state = [line_state]
-                        current_array_key = [key]
+                        current_array_key = [key + '_' + 'array-start']
                         line_last_dyad = line_dyad
                         line_last_chr = line_chr
                         array_count = 1
 
+    # step4. deprecated, filter process re-located in the filterabnormal
     # step4. re-calculate the regualrity and spacing. nuc_filtered_dict with key:state value:a list of chrom_coor1_coor2
     # step4.1 re-create coverage file
-    nuc_filt_count = 0
+
     for celltype in celltypelist:
         nuc_filt_tmp_count = write_multi_statesfile_from_dict(nuc_cell_filtered_dict[celltype],out_suffix,celltype)
-        nuc_filt_count += nuc_filt_tmp_count
-
-    create_file_for_regs_spacing('.',out_suffix,'_gl_an_resp_region.bed','_bin300_resp_total.txt','_filt',
-                                 celltypelist,like_wig_files_list,numcpu,states_list,rmtmpfile)
-
-    filt_ave_spacing_dict, filt_detail_spacing_dict, filt_regularity_score_dict \
-        = cal_regularity_spacing(states_list,celltypelist, array_up,array_down,hz_up,hz_down,plotmark,regularity_method,
-                                 '_bin300_resp_total.txt','filt')
+    #     nuc_filt_count += nuc_filt_tmp_count
+    # 
+    # create_file_for_regs_spacing('.',out_suffix,'_gl_an_resp_region.bed','_bin300_resp_total.txt','_filt',
+    #                              celltypelist,like_wig_files_list,numcpu,states_list,rmtmpfile)
+    # 
+    # filt_ave_spacing_dict, filt_detail_spacing_dict, filt_regularity_score_dict \
+    #     = cal_regularity_spacing(states_list,celltypelist, array_up,array_down,hz_up,hz_down,plotmark,regularity_method,
+    #                              '_bin300_resp_total.txt','filt')
 
     info_dict = defaultdict(list)
-    if writeinfo:
-        # write regularity score and average spacing
-        info_dict_name = 'Pre_Post_Regularity_Spacing_' + get_time() +'.txt'
-        info_dict_cols = ['Pre.Ave. Spacing','Post.Ave. Spacing','Pre.Regularity Score','Post.Regularity Score']
-        for state in states_list:
-            info_dict['Pre.Ave. Spacing'].append(ave_spacing_dict['state_'+state])
-            info_dict['Post.Ave. Spacing'].append(filt_ave_spacing_dict['state_'+state])
-            info_dict['Pre.Regularity Score'].append(regularity_score_dict['state_'+state])
-            info_dict['Post.Regularity Score'].append(filt_regularity_score_dict['state_'+state])
-        df_info = pd.DataFrame(info_dict,index=['S'+state for state in states_list])
-        df_info = df_info[info_dict_cols].round(2)
-        df_info.to_csv(info_dict_name,sep='\t')
+    # write regularity score and average spacing
+    for state in states_list:
+        info_dict['Pre.Ave. Spacing'].append(ave_spacing_dict['state_'+state])
+        info_dict['Pre.Regularity Score'].append(regularity_score_dict['state_'+state])
 
-        # write detailed spacing information, might be deprecate in the formal version
-        detail_spacing_name = 'Pre_post_Detail_Spacing_' + get_time() + '.txt'
-        f_spacing = open(detail_spacing_name,'w')
-        f_spacing.write('Pre-filter detail spacing information:\n')
-        for state in states_list:
-            output_number = [str(value) for value in detail_spacing_dict['state_'+state]]
-            f_spacing.write('S'+state+'\t'+'\t'.join(output_number)+'\n')
-        f_spacing.write('Post-filter detail spacing information:\n')
-        for state in states_list:
-            output_filt_number = [str(value) for value in filt_detail_spacing_dict['state_'+state]]
-            f_spacing.write('S'+state+'\t'+'\t'.join(output_filt_number)+'\n')
-        f_spacing.close()
+    # # write detailed spacing information, might be deprecate in the formal version
+    # detail_spacing_name = 'Pre_post_Detail_Spacing_' + get_time() + '.txt'
+    # f_spacing = open(detail_spacing_name,'w')
+    # f_spacing.write('Pre-filter detail spacing information:\n')
+    # for state in states_list:
+    #     output_number = [str(value) for value in detail_spacing_dict['state_'+state]]
+    #     # if interval number less than four, use the average of former three as the 4th interval value
+    #     while len(output_number) < 4:
+    #         output_number.append(str(np.round(ave_spacing_dict['state_'+state]/10,1)))
+    #     f_spacing.write('S'+state+'\t'+'\t'.join(output_number)+'\n')
+    # f_spacing.write('Post-filter detail spacing information:\n')
+    # for state in states_list:
+    #     output_filt_number = [str(value) for value in filt_detail_spacing_dict['state_'+state]]
+    #     while len(output_filt_number) < 4:
+    #         output_filt_number.append(str(np.round(filt_ave_spacing_dict['state_'+state]/10,1)))
+    #     f_spacing.write('S'+state+'\t'+'\t'.join(output_filt_number)+'\n')
+    # f_spacing.close()
 
-    return nuc_count,nuc_filt_count,info_dict
+    return nuc_count,info_dict,detail_spacing_dict,ave_spacing_dict
 
+def finalize_output(file,up_ratio,down_ratio,states_list,filterabnormal,single_nuc_state):
+    '''
+    filter abnormal nucleosomes: 1) irregular nucleosome at the end of array
+    2) very low and very high positioning score nucleosome if it is a single nucleosome.
+    3) this kind of array [4 5 5 5 5] are already filtered to [5 5 5 5] in array number process
+    ratio is in [0,1]
+    '''
+    print("Loading..")
+    input_df = pd.read_csv(file,sep='\t',header=None)
+    input_df.columns = ['Chrom','Start','End','State','Local.pos','Phasing.info','Positioning.info']
+    # add Local.spa info
+    input_df.loc[:,'dyad'] =(input_df.loc[:,'Start'] + input_df.loc[:,'End'])/2
+    input_df.loc[:,'Local.spa'] = input_df.loc[:,'dyad'].diff()
+    # The spacing of the 1st nucleosome in a chromosome should be same as the spacing value of the 2nd nucleosome
+    input_df = input_df.fillna(0)
+    input_df.loc[input_df.loc[:,'Local.spa'] < 0,'Local.spa'] = \
+        list(input_df.loc[input_df.loc[input_df.loc[:,'Local.spa'] < 0,'Local.spa'].index.values + 1,'Local.spa'])
+    input_df.loc[0,'Local.spa']= input_df.loc[1,'Local.spa']
+    # the spacing of the nucleosome at array-start should be same with the second position nucleosome
+    array_start_idx = input_df.loc[input_df.loc[:,'Phasing.info']=='array-start',:].index.values
+    input_df.loc[array_start_idx,'Local.spa'] = list(input_df.loc[array_start_idx+1,'Local.spa'])
+    input_df.drop(columns=['dyad'],inplace=True)
+    input_df = input_df[['Chrom','Start','End','State','Local.pos','Local.spa','Phasing.info','Positioning.info']]
+
+    # pos_filt = []
+    # states_filt_pos = {}
+    if filterabnormal:
+        print("Filtering")
+        before_phase_filt = len(input_df)
+        # drop the unphased-end
+        input_df = input_df.loc[~input_df.loc[:,'Phasing.info'].str.contains('unphased-end'),:]
+        after_phase_filt = len(input_df)
+        filter_info_print('Phasing',before_phase_filt,after_phase_filt)
+        # drop the single and outlier
+        input_df = input_df.loc[~(input_df.loc[:,'Phasing.info'].str.contains('single') &
+                                input_df.loc[:,'Positioning.info'].str.contains("out_q{}-q{}".format(down_ratio,up_ratio))),:]
+        after_pos_filt = len(input_df)
+        # drop the single array-start if down_average of the states larger than 1
+        arr_start_next_idx = input_df.loc[(~(input_df.loc[:,'State'].isin(single_nuc_state))) &
+                                          (input_df.loc[:,'Phasing.info']=="array-start"),:].index.values + 1
+        s = input_df.loc[arr_start_next_idx,'Phasing.info'] == "array-start"
+        single_start_idx = s[s].index.values - 1
+        input_df.drop(single_start_idx,inplace=True)
+        if after_phase_filt - after_pos_filt > 0.01:
+            # print(input_df.loc[(input_df.loc[:,'Phasing.info'].str.contains('single') &
+            #                     input_df.loc[:,'Positioning.info'].str.contains("out_q{}-q{}".format(down_ratio,up_ratio))),:])
+
+            filter_info_print('Positioning',after_phase_filt, after_pos_filt)
+
+        # for state in states_list:
+        #     states_filt_pos[state] = list(input_df.loc[input_df.loc[:,'State'].astype(str)==state,'Local.pos'])
+        #     pos_filt.append(np.mean(states_filt_pos[state]))
+    return input_df #pos_filt,states_filt_pos
+
+def filtered_statistic(final_files,resp_info_dict,statesnumber,background_state,regularity_method,celltypes,
+                       like_wig_files_list,numcpu,arraydown,rmtmpfile,plotmark):
+    # divide df to states_df into individual
+    print('Reading and Splitting nuclsoeome state file..')
+    for file in final_files:
+        celltype = file.split('/')[-1].split('_')[0]
+        nucstatefile_df = pd.read_csv(file,sep='\t',header=None)
+        gb = nucstatefile_df.groupby(3)
+        nucstatefile_split_df = [gb.get_group(x) for x in gb.groups]
+        all_states = list(set(nucstatefile_df[3]))
+        # make the order from small number to large number, import for later on array information writing
+        state_files_name = [celltype+'_state_'+ str(state) + '_final.bed' for state in sorted(all_states) if str(state) not in background_state]
+        for split_df in nucstatefile_split_df:
+            state = str(list(set(split_df[3]))[0])
+            if state in background_state:
+                continue
+            else:
+                split_df.to_csv(celltype+'_state_'+ state + '_final.bed',header=False,index=False,sep='\t')
+
+    states_list = []
+    for i in range(1,statesnumber+1):
+        if str(i) not in background_state:
+            states_list.append(str(i))
+    # re-calculate the nucleosome positioning, phasin and spacing
+    # state in states_list is string type
+    print("Calculating..")
+    array_up = 0
+    array_down =arraydown
+    hz_up = 5
+    hz_down = 7
+    create_file_for_regs_spacing('.','_final.bed','_final_region.bed','_bin300_final_total.txt','_filt',
+                                 celltypes,like_wig_files_list,numcpu,states_list,rmtmpfile)
+
+    filt_ave_spacing_dict, filt_detail_spacing_dict, filt_regularity_score_dict \
+        = cal_regularity_spacing(states_list,celltypes, array_up,array_down,hz_up,hz_down,plotmark,regularity_method,
+                                 '_bin300_final_total.txt','filt')
+    
+    
+    subprocess.call("rm *_state_*_final.bed",shell=True)
+    subprocess.call("rm *bin300*",shell=True)
+    return resp_info_dict,filt_ave_spacing_dict, filt_detail_spacing_dict, filt_regularity_score_dict
+        

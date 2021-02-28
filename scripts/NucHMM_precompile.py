@@ -3,14 +3,52 @@
 
 import re
 import sys
+import subprocess
+import pandas as pd
 from itertools import islice
 from contextlib import contextmanager
 from collections import defaultdict
 from NucHMM_common_data import hg19,hg38,val2chr,info2strand
 from NucHMM_utilities import ismember, get_time, process_read, ShowProcess
-from NucHMM_Load_Write_files import load_genome_size_file,load_assignedtf_file,load_nuc_position_file,write_precomp_file
+from NucHMM_Load_Write_files import load_genome_size_file,load_assignedtf_file,load_nuc_position_file,write_precomp_file, load_histonefile
 
-def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, nucposition):
+
+def order_type_dict(inputfilelist):
+    input_files = []
+    diction_order2moditype = {}
+    diction_moditype2order = {}
+    count_order_output = 0
+    if isinstance(inputfilelist,str):
+        with open(inputfilelist, 'r') as inputfile_list:
+            for line2 in inputfile_list:
+                L2 = line2.strip()
+                try:
+                    modi_type = re.findall("(?i)H\d{1}K\d+(?:me|ac)+\d",line2)[0]
+                except IndexError:
+                    modi_type = L2.split('/')[-1].split('_')[1]
+    
+                diction_order2moditype[count_order_output] = modi_type
+                diction_moditype2order[modi_type] = count_order_output
+                input_files.append(r'''%s''' % (L2))
+                count_order_output += 1
+    elif isinstance(inputfilelist,list):
+        for i in inputfilelist:
+            with open(i, 'r') as inputfile_list:
+                for line2 in inputfile_list:
+                    L2 = line2.strip()
+                    try:
+                        modi_type = re.findall("(?i)H\d{1}K\d+(?:me|ac)+\d",line2)[0]
+                    except IndexError:
+                        modi_type = L2.split('/')[-1].split('_')[1]
+        
+                    diction_order2moditype[count_order_output] = modi_type
+                    diction_moditype2order[modi_type] = count_order_output
+                    input_files.append(r'''%s''' % (L2))
+                    count_order_output += 1
+
+    return diction_moditype2order, diction_order2moditype, input_files
+
+def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, nucposition, mark_start):
     """tfassign is the sub-command that assign histone modification
     peaks to nucleosomes"""
 
@@ -30,7 +68,7 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
             for f in files:
                 tmp_name = f.split('/')[-1].split("_")[1]
                 filename.append(tmp_name)
-                tag[tmp_name] = (1 << count_t)
+                tag[tmp_name] = (1 << count_t + mark_start)
                 count_t += 1
                 fds.append(open(f, mode))
             yield fds
@@ -40,24 +78,7 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
             for fd in fds:
                 fd.close()
 
-
-    input_files = []
-    diction_order2moditype = {}
-    diction_moditype2order = {}
-    count_order_output = 0
-    with open(inputfilelist, 'r') as inputfile_list:
-        for line2 in inputfile_list:
-            L2 = line2.strip()
-            try:
-                modi_type = re.findall("(?i)H\d{1}K\d+(?:me|ac)+\d",line2)[0]
-            except IndexError:
-                modi_type = re.findall("(?i)H\d{1}K\d+(?:me|ac)+",line2)[0]
-
-            diction_order2moditype[count_order_output] = modi_type
-            diction_moditype2order[modi_type] = count_order_output
-            input_files.append(r'''%s''' % (L2))
-            count_order_output += 1
-
+    diction_moditype2order, diction_order2moditype, input_files = order_type_dict(inputfilelist)
     with open_many(input_files,'r') as bedfiles, \
          open(nucposition,'r') as pos_file, \
          open(outputfile,'w+') as outputfile:
@@ -86,8 +107,10 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
                         print("\nLine {} column 2 or 3 is not genomic coordinates".format(count_bed_line))
                         continue
 
+                # skip chrM and random scaffoldd
                 if L_chr == 'chrM' or len(L_chr) > 5:
                     continue
+
                 if L_start in diction_chr[L_chr]:
                     continue
                 else:
@@ -96,7 +119,7 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
             BED.append(diction_chr)
             f.close()
 
-        print('\nread nucleosome position file')
+        print('\nRead position file')
         pos_file.seek(0)
         count_pos_line = 0
         diction_pos = defaultdict(list)
@@ -136,7 +159,8 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
                         elif keys+'_'+str(position) in diction_pos_end:
                             diction_pos_end[keys+'_'+str(position)][index] = position - peak_i_start
                         else:
-                            print('please sort -u your input peak file')
+                            print('Please sort -k1,1V -k2,2n -k3,3n -u your input peak file and make sure there is no overlapped peaks (use bedtools merge)')
+                            print("Detected overlapped/duplicated peak {} {} {} {}".format(input_files[index],keys,peak_i_start,peak_i_end))
                             exit(1)
 
         print('Histone marks: transfered mark')
@@ -159,30 +183,63 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
                 L_last_end = end
             for i in range(number_of_BED):
                 if diction_pos_start[Chr+'_'+str(start)][i] > 0 and diction_pos_end[Chr+'_'+str(end)][i] > 0:
-                    mark += pow(2,i)
+                    mark += pow(2,i+mark_start)
                 elif diction_pos_start[Chr+'_'+str(start)][i] >= Nuc_length * intersect_cutoff or \
                     diction_pos_end[Chr+'_'+str(end)][i] >= Nuc_length * intersect_cutoff:
-                    mark += pow(2,i)
+                    mark += pow(2,i+mark_start)
                 else:
                     mark += 0
 
             process_bar.show_process(count_out_line)
             # sys.stdout.write('\routput line: ' + str(count_out_line))
             if gap:
-                nucleosome_spacing_mark = 2 ** count_order_output
+                nucleosome_spacing_mark = 2 ** (len(BED)+mark_start)
                 if count_out_line == 0:
                     outputfile.write(Chr + '\t' + str(start) + '\t' + str(end) + '\t' + str(mark) + '\n')
                     continue
                 else:
-                    outputfile.write("chr" + str(Chr) + '\t' + str(L_last_end) + '\t' + str(start) + '\t' + str(
+                    outputfile.write(Chr + '\t' + str(L_last_end) + '\t' + str(start) + '\t' + str(
                         nucleosome_spacing_mark) + '\n')
                     outputfile.write(Chr + '\t' + str(start) + '\t' + str(end) + '\t' + str(mark) + '\n')
             else:
-                outputfile.write(Chr + '\t' + str(start) + '\t' + str(end) + '\t' + str(mark) + '\n')
+                if mark_start == 0:
+                    outputfile.write(Chr + '\t' + str(start) + '\t' + str(end) + '\t' + str(mark) + '\n')
+                else:
+                    outputfile.write(Chr + '\t' + str(start) + '\t' + str(end) + '\t' + str(mark + 2 ** (len(BED)+mark_start)) + '\n')
             count_out_line += 1
 
     pos_file.close()
     outputfile.close()
+    return
+
+def gap_position(nucposition):
+    nuc_pos = pd.read_csv(nucposition,sep='\t',header=None)[[0,1,2]]
+    gap_pos = pd.concat([nuc_pos[[0]][:-1],nuc_pos[[2]][:-1],nuc_pos[[1]][1:].reset_index()[[1]]],axis=1)
+    return gap_pos
+    
+def ciselements_hm_assgin(intersect_cutoff, inputfilelist, cislist, outputfile, nucposition):
+    """assign histone modification peaks to nucleosomes and cis-element peaks to nucleosomes and gaps"""
+
+    # calculate nucleosome marks
+    print("Assign marks to nucleosomes..")
+    tmpinputfile1 = [inputfilelist, cislist]
+    tmpoutfile1 = 'tmp_nuc_assign.bed'
+    transcript_factor_assign(intersect_cutoff, False, tmpinputfile1, tmpoutfile1, nucposition, 0)
+
+    # calculate gap marks
+    print("\nAssgin marks to gaps")
+    tmpinputfile2 = cislist
+    tmpoutfile2 = 'tmp_gap_assign.bed'
+    gap_pos = gap_position(nucposition)
+    tmpgappos = 'tmp_gap_pos.bed'
+    gap_pos.to_csv(tmpgappos, header=False, index=False, sep='\t')
+    transcript_factor_assign(intersect_cutoff, False, tmpinputfile2, tmpoutfile2, tmpgappos, len(load_histonefile(inputfilelist)))
+
+    print("\nFinalize the process..")
+    # combine nucleosome mark file and gap mark file
+    subprocess.call("paste -d \\\\n {} {} > {}".format(tmpoutfile1,tmpoutfile2,outputfile),shell=True)
+    # remove tmp files
+    subprocess.call("rm {} {} {}".format(tmpoutfile1, tmpoutfile2, tmpgappos), shell=True)
 
 def segment_gene(genefile, segoutfile, up, down, refgene):
     """geneseg is sub-command for selecting effect region
@@ -330,7 +387,6 @@ def precompile_step(assignedfilelist, segfile, outputfilelist, refgene):
     diction_order2celltype = {}
     diction_celltype2order ={}
     count_order_output = 0
-
     with open(outputfilelist, 'r') as outputfile_list:
         for line2 in outputfile_list:
             L2 = line2.strip()
