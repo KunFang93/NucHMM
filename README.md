@@ -186,7 +186,7 @@ other temporary files and figures are stored in detail_info folder
 ```
 
 The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
-The final kept and annotated nucleosomes are in < celltypes >____gl_an_resp_pos_final.bed.
+The final kept and annotated nucleosomes are in < celltypes >___gl_an_resp_pos_final.bed.
 The columns in < celltypes >_gl_an_resp_pos_final.bed are:
 ```
 Chrom   Start   End State   Local.Positioning.Score Local.Spacing   Local.Phasing.info  Positioning.Mark
@@ -288,7 +288,7 @@ Commands:
      Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes). 
      
      * `--ciselementlist(-cel)`:
-     The list of cell cis-element files, Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder.
+     The list of cell cis-element files. Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder.
 
      * `--upboundary(-up)`:  
      Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
