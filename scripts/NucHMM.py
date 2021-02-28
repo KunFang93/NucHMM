@@ -178,7 +178,7 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ci
     peaksfile_list = load_histonefile(inputpeakslistfiles)
     nucposfile_list = load_histonefile(nucpositionfiles)
     outputfile_list = []
-<<<<<<< HEAD
+
     if ciselementlist is not None:
         ciselement_list = load_histonefile(ciselementlist)
         # assign peaks mark to nucleosome
@@ -988,7 +988,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     for file in outfile_list:
         celltype = file.split('/')[-1].split('_')[0]
         print(celltype)
-        final_outname = cwd+ '/'+ celltype + '_gl_an_resp_pos_final.txt'
+        final_outname = cwd+ '/'+ celltype + '_gl_an_resp_pos_final.bed'
         final_file_name.append(final_outname)
         final_df = finalize_output(file,upratio,downratio,states_list,filterabnormal,single_nuc_state)
         final_df.loc[:,'Local.pos'] = np.round(final_df.loc[:,'Local.pos'],3)
@@ -997,7 +997,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     print("Writing Array Info..")
     for file in final_file_name:
         celltype = file.split('/')[-1].split('_')[0]
-        outputname =  cwd+ '/'+ celltype + '_gl_an_resp_pos_final.arrayed.txt'
+        outputname =  cwd+ '/'+ celltype + '_gl_an_resp_pos_final.arrayed.bed'
         write_final_array(file,outputname)
     
     if filterabnormal:

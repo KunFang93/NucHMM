@@ -4,8 +4,14 @@
 
 Nucleosome organization, often described as its positioning, spacing and regularity, is the interplay among nucleosome and nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome regularity, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
 
-## Recent Changes for NucHMM (version 1.1)
+## Recent Changes for NucHMM (version 1.2)
 
+v1.2
+* add --ciselementlist parameter in nuchmm-init
+* optimize the nucleosome organization filters and the final output format
+* fix typo in NucHMM_common_data.py
+
+v1.1
 * add --markthreshold parameter in nuchmm-screen-init and matrix-visualize  
 * fix background_state bug for nuchmm-screen-init
 
@@ -173,14 +179,23 @@ NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt
 
 The default output files:
 ```
-<celltypes>_gl_an_resp_pos_filt.bed
+<celltypes>_gl_an_resp_pos_final.bed
+<celltypes>_gl_an_resp_pos_final.arrayed.bed
 functional_nucleosome_state_post.txt
-Nuc_pos_vio.png, Regularity_score_filt.png, State_Spectral_density_filt.png, Array_distribution_filt.png
+other temporary files and figures are stored in detail_info folder
 ```
 
 The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
-The final kept nucleosomes are in < celltypes >_gl_an_resp_pos_filt.bed.   
-
+The final kept and annotated nucleosomes are in < celltypes >____gl_an_resp_pos_final.bed.
+The columns in < celltypes >_gl_an_resp_pos_final.bed are:
+```
+Chrom   Start   End State   Local.Positioning.Score Local.Spacing   Local.Phasing.info  Positioning.Mark
+```
+The final simplified nucleosome states' array are in < celltypes >_gl_an_resp_pos_final.arrayed.bed.   
+The columns in < celltypes >_gl_an_resp_pos_final.arrayed.bed are:
+```
+Chrom   Start   End State   Local.Ave.Positioning   Local.Ave.Spacing
+```
 Enjoy :blush:!
 
 ## Command Line
@@ -272,6 +287,9 @@ Commands:
      * `--gap(-g)`:  
      Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes). 
      
+     * `--ciselementlist(-cel)`:
+     The list of cell cis-element files, Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder.
+
      * `--upboundary(-up)`:  
      Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
      
@@ -477,7 +495,7 @@ Commands:
      Specify the color palette of the matrix. 0 is red-white; 1 is red-yellow(YlOrRd) and 2 is red-blue(coolwarm). Default: 2.
      
      * `--markthreshold(-mt)`:  
-     Specify the mark threshold for state-mark matrix. Default: 1 (not showing).
+     Specify the mark threshold for state-mark matrix. Default: 1.1 (not showing).
      
      * `--transmat(-tmat)`:  
      Specify the path and name of the transition probability matrix, otherwise will automatically save to trans.< current time >.png
@@ -493,6 +511,9 @@ Commands:
      
      * `--writematrix`:  
      Write mark_state matrix and transistion probability matrix in txt files.
+
+     * `--inputmatrix`:
+     Visualize input mark_state matrix
      
 ## Contact Us
 Kun Fang: fangk@livemail.uthscsa.edu; Victor Jin: jinv@uthscsa.edu
