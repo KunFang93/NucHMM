@@ -288,7 +288,7 @@ Commands:
      Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes). 
      
      * `--ciselementlist(-cel)`:
-     The list of cell cis-element files. Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder.
+     The list of cell cis-element files. Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder. **Warning: This comment will conflict with nuchmm-screen-init and nuchmm-screen! Only applied on nuchmm-train, if user want to perform the following nucleosome organization analysis, please remove the gaps in the bed file from nuchmm-train.**
 
      * `--upboundary(-up)`:  
      Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
