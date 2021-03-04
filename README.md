@@ -1,4 +1,5 @@
 # NucHMM: A Quantitative modeling of nucleosome organization identifies functional nucleosome states.  
+[![DOI](https://zenodo.org/badge/246422558.svg)](https://zenodo.org/badge/latestdoi/246422558)
 
 ## Introduction
 
