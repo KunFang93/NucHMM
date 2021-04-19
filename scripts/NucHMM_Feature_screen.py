@@ -1497,10 +1497,10 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                                                                                           '_bin300_total.txt','')
 
     # step3 identify the abnormal nucleosomes in array based on the spacing and regularity we calculated from step2
-    # step3.1 rank the states by their regualrity score, the state with the smallest regularity score is rank1
+    # step3.1 rank the states by their regualrity score, the state with the largest regularity score is rank1
     state_regularity_rank = {}
     rank = 1
-    for key in sorted(regularity_score_dict, key=regularity_score_dict.get):
+    for key in sorted(regularity_score_dict, key=regularity_score_dict.get, reverse=True):
         state_regularity_rank[key] = rank
         rank += 1
 
