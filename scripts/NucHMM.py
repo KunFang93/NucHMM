@@ -754,8 +754,8 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
 @click.option('--upratio','-ur',default=95,help='Specify the top quantile cutoff in the nucleosome positioning filtering process. Default: 95.')
 @click.option('--arraydown','-adown',default=1000,help='Specify the range of the nucleosome array for calculating nucleosoem regularity and spacing. '
                                                        'Currently only accept 1000 and 2000 as input. Default: 1000.')
-@click.option('--rankcoef','-rc',default=10,help='Specify the cofficient of the regularity rank for marking unmatched nucleosome. '
-                                                 'The larger the coefficient, the looser the filter. Default: 10.')
+@click.option('--rankcoef','-rc',default=1,help='Specify the cofficient of the regularity rank for marking unmatched nucleosome. '
+                                                 'The larger the coefficient, the looser the filter. Default: 1.')
 @click.option('--refhg19/--refhg38',default=True,help='Specify the reference genome. Default: built-in hg19.')
 @click.option('--writeinfo','-wi',is_flag=True,help='Write files contain the detail array-num, nucleosome regularity, spacing and positioning information.')
 @click.option('--plotmark','-pm',is_flag=True,help='Plot state-array distribution, bar-plot of regularity score,'
