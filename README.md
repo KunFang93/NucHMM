@@ -468,7 +468,7 @@ Commands:
      Specify the criterion to calculate the regularity score. `--max` method chooses the max spectral density between 150-200 bp as the regularity score. `--mean` method calculate the average of teh spectral density between 150-200 bp as the regularity score.  
      
      * `--rankcoef(-rc)`:  
-     Specify the cofficient of the regularity rank for filtering unmatched nucleosome. The larger the coefficient, the looser the filter. Default: 10.
+     Specify the cofficient of the regularity rank for filtering unmatched nucleosome. The larger the coefficient, the looser the filter. Default: 2.
      
      * `--refhg19/--refhg38`:  
      Specify the reference genome. Default: built-in hg19.
