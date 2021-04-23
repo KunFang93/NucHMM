@@ -921,18 +921,19 @@ def array_num_filter(gl_filtfile,gl_an_filtfile,down_ratio_limit,up_ratio_limit,
     # print("{} pop up {}".format(gl_filtfile,count))
     down_number,upper_number,weighted_number = find_up_down_array_num(diction_array_num_new,20,up_ratio_limit,
                                                                       show_distribute_mark)
+    # up number here is only up_ratio_limit, in practice we kept those extremely long nucleosome arrays
     print("{}: down {}; up {}; weighted {}".format(gl_filtfile,down_number,upper_number,weighted_number))
     if sys.version_info <(3,0):
         keys = diction_array_num.keys()
         print('Filtering the outlier arrays..')
         for array_num in keys:
-            if array_num < down_number or array_num > upper_number:
+            if array_num < down_number :
                 diction_array_num.pop(array_num)
     else:
         print('Filtering the outlier arrays..')
         # print("down number:",down_number,"upper number:",upper_number)
         for array_num in list(diction_array_num):
-            if array_num < down_number or array_num > upper_number:
+            if array_num < down_number :
                 diction_array_num.pop(array_num)
 
     tmpfile = 'tmp' + get_time() + '.txt'
@@ -1497,16 +1498,15 @@ def regularity_spacing_filter(gl_an_filt_file_path,celltypelist,like_wig_files_l
                                                                                           '_bin300_total.txt','')
 
     # step3 identify the abnormal nucleosomes in array based on the spacing and regularity we calculated from step2
-    # step3.1 rank the states by their regualrity score, the state with the smallest regularity score is rank1
+    # step3.1 rank the states by their regualrity score, the state with the largest regularity score is rank1
     state_regularity_rank = {}
     rank = 1
-    for key in sorted(regularity_score_dict, key=regularity_score_dict.get):
+    for key in sorted(regularity_score_dict, key=regularity_score_dict.get, reverse=True):
         state_regularity_rank[key] = rank
         rank += 1
 
     # step3.2 identify according to the following rule the spacing between the nucleosomes
-    # will be nucleosome spacing (result from step2 )  +/- interval * (5 + regularity rank * rank_coefficient) bp (inspired by paper :
-    # "Fuzziness and Noise in nucleosomal architecture")
+    # will be nucleosome spacing (result from step2 )  +/- interval * (5 + regularity rank * rank_coefficient) bp
     nuc_count = 0
     nuc_cell_filtered_dict = {celltype:defaultdict(list) for celltype in celltypelist}
     for celltype in celltypelist:
