@@ -159,7 +159,10 @@ def NucHMM_prep(fastq,inputfqslist,inputbamslist,fastqc,bowtieindexpath,bowtie2i
 @click.option('--refgenome', '-refg', type=click.Path(), help='The reference genome file contains the length of each chromosomes.')
 @click.option('--intersect_cutoff', '-ic',default=0.3, help='The intersect threshold to assign histone mark peaks to the nucleosomes.')
 @click.option('--gap', '-g', is_flag=True, help='Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes)')
-@click.option('--ciselementlist','-cel',type=click.Path(), help='The list of cell cis-element files, check the example file in example_files folder')
+@click.option('--ciselementlist','-cel',type=click.Path(), help='The list of cell cis-element files, check the example file in example_files folder。'
+                                                                'Warning: This comment will conflict with nuchmm-screen-init and nuchmm-screen! '
+                                                                'Only applied on nuchmm-train, if user want to perform the following '
+                                                                'nucleosome organization analysis, please remove the gaps in the bed file from nuchmm-train')
 @click.option('--upboundary', '-up',default=100000, help='Upstream boundary of TSS for selecting the training region.')
 @click.option('--downboundary', '-down',default=10000, help='Downstream boundary of TTS for selecting the training region.')
 @click.option('--removetmpfile','-rmf',is_flag=True,help='Flag of removing all temporary files.')
@@ -656,8 +659,13 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
                         exit(1)
     else:
         # load secondr files
-        statesfiles_list = load_histonefile(statesfilelist)
-        outputsfiles_list = load_histonefile(outputsfilelist)
+        try:
+            statesfiles_list = load_histonefile(statesfilelist)
+            outputsfiles_list = load_histonefile(outputsfilelist)
+        except TypeError:
+            print("-sfl should used with -ofl, please check the input")
+            exit(1)
+
         for idx,statefile_name in enumerate(statesfiles_list):
             outputfile = outputsfiles_list[idx]
             celltype = celltypes_list[idx]
@@ -754,8 +762,8 @@ def NucHMM_screen_init(rawhmmfile,histonelistfile,bgstate,genesfile,celltypes, s
 @click.option('--upratio','-ur',default=95,help='Specify the top quantile cutoff in the nucleosome positioning filtering process. Default: 95.')
 @click.option('--arraydown','-adown',default=1000,help='Specify the range of the nucleosome array for calculating nucleosoem regularity and spacing. '
                                                        'Currently only accept 1000 and 2000 as input. Default: 1000.')
-@click.option('--rankcoef','-rc',default=10,help='Specify the cofficient of the regularity rank for marking unmatched nucleosome. '
-                                                 'The larger the coefficient, the looser the filter. Default: 10.')
+@click.option('--rankcoef','-rc',default=1,help='Specify the cofficient of the regularity rank for marking unmatched nucleosome. '
+                                                 'The larger the coefficient, the looser the filter. Default: 1.')
 @click.option('--refhg19/--refhg38',default=True,help='Specify the reference genome. Default: built-in hg19.')
 @click.option('--writeinfo','-wi',is_flag=True,help='Write files contain the detail array-num, nucleosome regularity, spacing and positioning information.')
 @click.option('--plotmark','-pm',is_flag=True,help='Plot state-array distribution, bar-plot of regularity score,'
