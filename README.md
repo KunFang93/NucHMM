@@ -1,10 +1,11 @@
 # NucHMM: A Quantitative modeling of nucleosome organization identifies functional nucleosome states.  
+[![DOI](https://zenodo.org/badge/246422558.svg)](https://zenodo.org/badge/latestdoi/246422558)
 
 ## Introduction
 
-Nucleosome organization, often described as its positioning, spacing and regularity, is the interplay among nucleosome and nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome regularity, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
+Nucleosome organization, described as nucleosomal phasing, spacing, and positioning, is determined by the interplay among nucleosome, nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome phasing, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
 
-## Recent Changes for NucHMM (version 1.2)
+## NucHMM Update Logs(version 1.2)
 
 v1.2
 * add --ciselementlist parameter in nuchmm-init
@@ -186,7 +187,7 @@ other temporary files and figures are stored in detail_info folder
 ```
 
 The final function nucleosome states features are store in functional_nucleosome_state_post.txt.  
-The final kept and annotated nucleosomes are in < celltypes >___gl_an_resp_pos_final.bed.
+The final kept and annotated nucleosomes are in < celltypes >_gl_an_resp_pos_final.bed.
 The columns in < celltypes >_gl_an_resp_pos_final.bed are:
 ```
 Chrom   Start   End State   Local.Positioning.Score Local.Spacing   Local.Phasing.info  Positioning.Mark
@@ -288,7 +289,7 @@ Commands:
      Flag of giving a mark to inter-nucleosome region (gaps between nucleosomes). 
      
      * `--ciselementlist(-cel)`:
-     The list of cell cis-element files. Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder.
+     The list of cell cis-element files. Allow users to add the cis-element regulators in the HMM model. Check the example file in example_files folder. **Warning: This comment will conflict with nuchmm-screen-init and nuchmm-screen! Only applied on nuchmm-train, if user want to perform the following nucleosome organization analysis, please remove the gaps in the bed file from nuchmm-train.**
 
      * `--upboundary(-up)`:  
      Upstream boundary of TSS for selecting the training region. Default:100000. The larger the number, the more computational resources (memory) and training time needed.
@@ -467,7 +468,7 @@ Commands:
      Specify the criterion to calculate the regularity score. `--max` method chooses the max spectral density between 150-200 bp as the regularity score. `--mean` method calculate the average of teh spectral density between 150-200 bp as the regularity score.  
      
      * `--rankcoef(-rc)`:  
-     Specify the cofficient of the regularity rank for filtering unmatched nucleosome. The larger the coefficient, the looser the filter. Default: 10.
+     Specify the cofficient of the regularity rank for filtering unmatched nucleosome. The larger the coefficient, the looser the filter. Default: 1.
      
      * `--refhg19/--refhg38`:  
      Specify the reference genome. Default: built-in hg19.
