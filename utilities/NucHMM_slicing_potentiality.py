@@ -340,7 +340,7 @@ spe_colors = {'1':'gold','2':'blue', '3':'orange', '4':'green', '5':'red', '6':'
               '9':'gray', '10':'olive','11':'cyan','12':'lightblue','13':'peru', '14':'navy','15':'limegreen',
               '16':'darkcyan','17':'orchid','18':'saddlebrown','19':'sliver','20':'black'}
 states_list = [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13]
-K79me2_state_list = [1,6,7,11,13]
+K79me2_state_list = [1,6,11,13]
 celltype = nuceventfile.split('/')[-1].split('_')[0]
 # read nuc_event and divide to SE and noSE according to mark col
 nuc_event = pd.read_table(nuceventfile, sep='\t', header=None)
