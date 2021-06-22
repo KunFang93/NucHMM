@@ -1,4 +1,4 @@
-# NucHMM: A Quantitative modeling of nucleosome organization identifies functional nucleosome states.  
+# NucHMM: a method for quantitative modeling of nucleosome organization identifying functional nucleosome states distinctly associated with pioneer capacity and splicing potentiality.  
 [![DOI](https://zenodo.org/badge/246422558.svg)](https://zenodo.org/badge/latestdoi/246422558)
 
 ## Introduction
@@ -23,7 +23,7 @@ v1.1
 
 The program is tested on *Linux 3.10.0/CentOS 7*.
 
-NucHMM was implemented by using python. It has been compiled and run exclusively on Linux operating systems. The C++ part of NucHMM should compile with GCC and run on any x86 64-bit Linux system running at least Kernel 2.6. A computer with several gigabytes of RAM is strongly recommended to avoid an out-of-memory error. NucHMM requires Boost and OpenMP to be available (can be install by conda). By default, NucHMM will attempt to use all cores of a computer if possible (up to a limit depending on the genome and the number of cell lines used, after which additional cores will provide no benefit), however NucHMM respects the environment variable OMP_NUM_THREADS. T-cep does not benefit from any GPU installed or CUDA, and is CPU-bound instead of IO-bound on most systems.
+NucHMM was implemented by using python. It has been compiled and run exclusively on Linux operating systems. The C++ part of NucHMM should compile with GCC and run on any x86 64-bit Linux system running at least Kernel 2.6. A computer with several gigabytes of RAM is strongly recommended to avoid an out-of-memory error. NucHMM requires Boost and OpenMP to be available (can be install by conda). By default, NucHMM will attempt to use all cores of a computer if possible (up to a limit depending on the genome and the number of cell lines used, after which additional cores will provide no benefit), however NucHMM respects the environment variable OMP_NUM_THREADS. NucHMM does not benefit from any GPU installed or CUDA, and is CPU-bound instead of IO-bound on most systems.
 
 The installation currently requires the [**miniconda**](https://docs.conda.io/en/latest/miniconda.html). 
 
