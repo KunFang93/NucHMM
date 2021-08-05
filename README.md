@@ -1,4 +1,4 @@
-# NucHMM: a method for quantitative modeling of nucleosome organization identifying functional nucleosome states distinctly associated with pioneer capacity and splicing potentiality.  
+# NucHMM: a method for quantitative modeling of nucleosome organization identifying functional nucleosome states distinctly associated with splicing potentiality.  
 [![DOI](https://zenodo.org/badge/246422558.svg)](https://zenodo.org/badge/latestdoi/246422558)
 
 ## Introduction
