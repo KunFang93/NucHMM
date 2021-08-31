@@ -515,6 +515,13 @@ Commands:
 
      * `--inputmatrix`:
      Visualize input mark_state matrix
-     
+## Citations
+     NucHMM is published in Genome Biology. If it helps your research, please cite it as:
+     ```
+     Kun Fang, Tianbao Li, Yufei Huang & Victor X. Jin  
+     NucHMM: a method for quantitative modeling of nucleosome organization identifying functional nucleosome states distinctly associated with splicing potentiality。 
+     Genome Biol 22, 250 (2020). 
+     https://doi.org/10.1186/s13059-021-02465-1
+     ```
 ## Contact Us
 Kun Fang: fangk@livemail.uthscsa.edu; Victor Jin: jinv@uthscsa.edu
