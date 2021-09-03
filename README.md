@@ -60,7 +60,7 @@ make
 ## Quick Start
 *__Note:__ The context in <> should be replace by user according to real data*
 
-### **Step1: ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
+### **Step1(Optional): ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
  
 
 __Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header, and please keep the all like_wig files). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
