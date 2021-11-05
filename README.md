@@ -53,8 +53,6 @@ conda activate nuchmm
 ```
 cd <path to the NucHMM>/scripts
 pip install --editable .
-cd NucHMM_Cplus/
-make
 ```
 
 ## Quick Start
