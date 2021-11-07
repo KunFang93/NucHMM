@@ -173,7 +173,8 @@ Then,
 ```
 NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
 -lwfl like_wigs_list.txt -nucf nucposfiles_list.txt -bg <background state1> .. -bg <background stateN> \
--sn <Total number of states, e.g. Mark_state.png show total 13 states> -pm -wi -rmf
+-sn <Total number of states, e.g. Mark_state.png show total 13 states> -ifl nuchmm_screen_init_result_files.txt \
+ -srf states_genomic_location.txt -pm -wi -rmf
 ```
 
 The default output files:
