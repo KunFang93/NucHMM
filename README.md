@@ -5,7 +5,10 @@
 
 Nucleosome organization, described as nucleosomal phasing, spacing, and positioning, is determined by the interplay among nucleosome, nucleosome-binding factors such as DNA-binding factors, histone chaperones, and ATP-dependent chromatin remodelers. To address the lacking power of determining the combinational effects of the different influencing factors on nucleosome organization, we presented **NucHMM** for identifying functional nucleosome states. NucHMM integrates a hidden Markov model (HMM), and estimated nucleosome phasing, spacing as well as positioning information, to identify nucleosome states associated with cell type-specific combinatorial histone marks.
 
-## NucHMM Update Logs(version 1.2)
+## NucHMM Update Logs (version 1.2)
+v1.2
+02/21/2022
+(**important**) Optimize and fix bug for the installation step
 
 v1.2
 * add --ciselementlist parameter in nuchmm-init
