@@ -74,7 +74,8 @@ class SpecialHelpOrder(click.Group):
 
         return decorator
 
-required_programs = ["bedops","bedtools","deeptools","macs2","epic2","fastqc","samtools","trim_galore","bowtie","bowtie2"]
+required_programs = ["bedops","bedtools","deeptools","samtools",]
+# "macs2","epic2","fastqc","trim_galore","bowtie","bowtie2" are needed if use nuchmm-prep
 for prog in required_programs:
     p = which(prog)
     # print("Checking if %s is available" %(prog))
