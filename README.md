@@ -61,7 +61,18 @@ pip install --editable .
 ### **Step1(Optional): ChIP-seq peaks and MNase-seq nucleosome locations files preparation.**  
  
 
-__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header, and please keep the all like_wig files). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.  
+__Skip__ this step if you alreay have the histone marks' peak files and iNPS derived nucleosome files (remove the header, and please keep the all like_wig files). You can check those files' format in example_files folder. We __recommend__ use your own favored pipeline.
+
+This section needs additional installation of packages
+```
+use conda install
+  - bowtie=1.2.3
+  - bowtie2=2.4.1
+  - fastqc=0.11.9
+  - trim-galore=0.6.5
+  - macs2=2.2.7.1
+  - epic2=0.0.41
+```
 
 If the input all files in fastq format
 ```
