@@ -353,7 +353,7 @@ def write_precomp_file(direction, dict_seg, seg_name, count_out, L4_mark, cell_n
                                           str(dict_seg[seg_name][2+2*number_of_cell+cell_num][index][1]) + '\n')
                 else:
                     for i in range(-diff):
-                        print(count_out)
+                        # print(count_out)
                         count_out += 1
                         outputfile.write(str(chr_index) + '\t' + str(count_out) + '\t' + str(0) + '\n')
                     dict_seg[seg_name][2+number_of_cell+cell_num].reverse()
