@@ -66,7 +66,7 @@ def transcript_factor_assign(intersect_cutoff, gap, inputfilelist, outputfile, n
             fds = []
             count_t = 0
             for f in files:
-                tmp_name = f.split('/')[-1].split("_")[1]
+                tmp_name = f.split('/')[-1].split("_")[1].split(".")[0]
                 filename.append(tmp_name)
                 tag[tmp_name] = (1 << count_t + mark_start)
                 count_t += 1
