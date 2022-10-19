@@ -276,7 +276,7 @@ def NucHMM_init(inputpeakslistfiles, nucpositionfiles, intersect_cutoff, gap, ci
                 with open(marks_list,'r') as mark_f:
                     for mark_file in mark_f:
                         # if user following the standard naming rule, the histone marks should behind celltype
-                        mark_name = mark_file.split('/')[-1].split('_')[1]
+                        mark_name = mark_file.split('/')[-1].split('_')[1].split('.')[0]
                         if str.lower(mark_name[0])=='h':
                             his_file.write(mark_name+'\n')
                         else:
