@@ -548,38 +548,38 @@ def genomic_loc_finder(genesfile,filelist,rawhmmfile,histonelistfile,upDistal,up
                                      down_boundary,False,True,totalgenenum,celltype,spe_colors,states,background_state,
                                      States_x_total,plot_mark,False)
         else:
-            query_mark = query_yes_no("Do you have "+mapped_upbed+'/'+mapped_genebody+'/'+mapped_downbed
-                                      +'/'+" in other directory?\n")
-            if query_mark:
-                if sys.version_info > (3,0):
-                    new_path = input( "Please input the directory(Folder path): ")
-                else:
-                    new_path = raw_input( "Please input the directory(Folder path): ")
-                new_mapped_upbed = new_path + '/' + mapped_upbed
-                new_mapped_genebody = new_path +  '/' + mapped_genebody
-                new_mapped_downbed = new_path + '/' + mapped_downbed
-                mappedfiles = [new_mapped_upbed,new_mapped_genebody,new_mapped_downbed]
+#             query_mark = query_yes_no("Do you have "+mapped_upbed+'/'+mapped_genebody+'/'+mapped_downbed
+#                                       +'/'+" in other directory?\n")
+#             if query_mark:
+#                 if sys.version_info > (3,0):
+#                     new_path = input( "Please input the directory(Folder path): ")
+#                 else:
+#                     new_path = raw_input( "Please input the directory(Folder path): ")
+#                 new_mapped_upbed = new_path + '/' + mapped_upbed
+#                 new_mapped_genebody = new_path +  '/' + mapped_genebody
+#                 new_mapped_downbed = new_path + '/' + mapped_downbed
+#                 mappedfiles = [new_mapped_upbed,new_mapped_genebody,new_mapped_downbed]
+#                 States_x_total = output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_other_area,
+#                                                   upDistal,down_boundary,False,True,totalgenenum,celltype,spe_colors,
+#                                                   states,background_state,States_x_total,plot_mark,False)
+#             else:
+            mappedfiles = [mapped_upbed,mapped_genebody,mapped_downbed]
+            if file_check('./TSS_up_seg.srt.filt.bed') and file_check('./genebody_seg.srt.bed') and \
+                    file_check('./TTS_down_seg.srt.filt.bed'):
+                print('Seg.srt.bed exists. Start from Step2')
+                '''start from step2'''
+                print(' Get mapped-state file...')
+                # createfile mark is True, step1 is False and step2 is True
                 States_x_total = output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_other_area,
                                                   upDistal,down_boundary,False,True,totalgenenum,celltype,spe_colors,
-                                                  states,background_state,States_x_total,plot_mark,False)
+                                                  states,background_state,States_x_total,plot_mark,True)
             else:
-                mappedfiles = [mapped_upbed,mapped_genebody,mapped_downbed]
-                if file_check('./TSS_up_seg.srt.filt.bed') and file_check('./genebody_seg.srt.bed') and \
-                        file_check('./TTS_down_seg.srt.filt.bed'):
-                    print('Seg.srt.bed exists. Start from Step2')
-                    '''start from step2'''
-                    print(' Get mapped-state file...')
-                    # createfile mark is True, step1 is False and step2 is True
-                    States_x_total = output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_other_area,
-                                                      upDistal,down_boundary,False,True,totalgenenum,celltype,spe_colors,
-                                                      states,background_state,States_x_total,plot_mark,True)
-                else:
-                    '''start from step1'''
-                    print('Start from Step1')
-                    # createfile mark is True, step1 is True and step2 is True
-                    States_x_total = output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_other_area,
-                                                      upDistal,down_boundary,True,True,totalgenenum,celltype,spe_colors,
-                                                      states,background_state,States_x_total,plot_mark,True)
+                '''start from step1'''
+                print('Start from Step1')
+                # createfile mark is True, step1 is True and step2 is True
+                States_x_total = output_plot_text(genesfile,file,mappedfiles,samplepoints,refgene,interval_other_area,
+                                                  upDistal,down_boundary,True,True,totalgenenum,celltype,spe_colors,
+                                                  states,background_state,States_x_total,plot_mark,True)
 
 
     '''Loading mark-state matrix'''
