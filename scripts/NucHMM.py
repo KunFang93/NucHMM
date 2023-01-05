@@ -895,7 +895,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     hzup = 5
     hzdown = 7
     gl_an_filt_file_path = '.'
-    like_wig_files_list = load_histonefile(cwd+'/'+like_wig_fileslist)
+    like_wig_files_list = load_histonefile(like_wig_fileslist)
     numcpu = multiprocessing.cpu_count()//2
     if numcpu > statesnumber:
         numcpu = statesnumber
