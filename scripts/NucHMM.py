@@ -814,7 +814,23 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
             stateregion_name = input_new_name("Please input the path and name of the predicted region file: ")
     else:
         stateregion_name = statesregionfile
-
+    
+    if file_check(like_wig_fileslist):
+        like_wig_fileslist_final = like_wig_fileslist
+    elif file_check(cwd+ '/' + like_wig_fileslist):
+        like_wig_fileslist_final = cwd+ '/' + like_wig_fileslist
+    else:
+        print("-lwfl like_wig_files_list file is not existed, please check the path")
+        exit(1)
+    
+    if file_check(nucpositionfiles):
+        nucpositionfiles_final = nucpositionfiles
+    elif file_check(cwd+ '/' + nucpositionfiles):
+        nucpositionfiles_final = cwd+ '/' + nucpositionfiles
+    else:
+        print("-nucf nucleosome position file is not existed, please check the path")
+        exit(1)
+    
     statesfile_list = load_histonefile(statesfilelist_name)
     stateregionfile = stateregion_name
     array_info_dict = defaultdict(list)
@@ -895,7 +911,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
     hzup = 5
     hzdown = 7
     gl_an_filt_file_path = '.'
-    like_wig_files_list = load_histonefile(like_wig_fileslist)
+    like_wig_files_list = load_histonefile(like_wig_fileslist_final)
     numcpu = multiprocessing.cpu_count()//2
     if numcpu > statesnumber:
         numcpu = statesnumber
@@ -961,7 +977,7 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
 
     # the files in inputfilelist and nucdetailfilelist should be in same order
     inputfile_list = gl_an_resp_filt_files
-    nucdetailfile_list = load_histonefile(cwd+'/'+nucpositionfiles)
+    nucdetailfile_list = load_histonefile(nucpositionfiles_final)
 
     outfile_list = []
     for file in inputfile_list:
