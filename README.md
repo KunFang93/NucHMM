@@ -114,6 +114,10 @@ Then, use command
 ```
 NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt -rmf
 ```
+e.g.
+```
+NucHMM nuchmm-init -iplf histonelists_list.txt -nucf nucposfile_list.txt -gf /data/kun/Softwares/NucHMM/annotation_files/genebody_anno_hg19.txt -rmf
+```
 
 The default output file will be named <celltype>_<# histone mark>.precomp in the current directory. User can specify the ouptut name by -ofl parameter.  
   
@@ -138,6 +142,11 @@ Note that training process could take few hours up to a day depends on how much 
 nohup NucHMM --hmm-directory <Full Path to NucHMM>/scripts/NucHMM_Cplus/bin/ nuchmm-train -refg <Full Path to NucHMM>/annotation/hg19.chrom.sizes.txt -pl precompfile_list.txt -numh <number of histone marks. e.g. 8> &> train.log &
 ```
 
+e.g.
+```
+nohup NucHMM --hmm-directory /data/kun/Softwares/NucHMM/scripts/NucHMM_Cplus/bin nuchmm-train -refg /data/kun/NucHMM_project/NucHMM_data/annotation/hg19.chrom.sizes.txt -pl /data/kun/project/nuchmm_results/nuchmm_init/Precompfiles_list.txt -numh 8 -nums 15 -rmf &>train_15_1.log &
+```
+
 The default output file will be name HMM_<# histone marks>.rawhmm in the current directory. User can specify the output name by -ohmm parameter.
 
 ### **Step4: Matrix visualization and background state detection.**
@@ -152,6 +161,11 @@ histone_marks.txt file that contains all histone marks.
 Then, visualize the Transition and Mark-state matrix first.
 ```
 NucHMM matrix-visualize -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.txt
+```
+
+e.g.,
+```
+NucHMM matrix-visualize -rhf /data/kun/project/nuchmm_results/nuchmm_train/18/18_2/HMM_8_secondr.rawhmm -hlf histone_marks.txt -tmat trans_18-2.png -msmat markstate_18-2.png -mt 0.3
 ```
 
 The default output files will be two png files. 
@@ -170,6 +184,11 @@ NucHMM nuchmm-screen-init -rhf HMM_<# histone marks>.rawhmm -hlf histone_marks.t
 -bg <background state1> -bg <background state2> .. -bg <background stateN> \
 -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt \
 -ct <celltype1> -ct <celltype2> .. -ct <celltypeN> -ptm -rmf
+```
+
+e.g.,
+```
+NucHMM nuchmm-screen-init -rhf /data/kun/project/NucHMM_results/NucHMM_train/110920/20/20_1/HMM_8_secondr.rawhmm -hlf /data/kun/project/NucHMM_results/NucHMM_init/110920/histone_marks -bg 1 -bg 2 -gf /data/kun/NucHMM_project/NucHMM_data/annotation/genebody_anno.txt -ct Abl -ct LNCap-Veh -ptm -rmf -sfl statesfilelist.txt  -ofl outputfilelist.txt
 ```
 
 The default output files:   
@@ -193,6 +212,10 @@ NucHMM nuchmm-screen -gf <Full Path to NucHMM>/annotation/genebody_anno_hg19.txt
 -lwfl like_wigs_list.txt -nucf nucposfiles_list.txt -bg <background state1> .. -bg <background stateN> \
 -sn <Total number of states, e.g. Mark_state.png show total 13 states> -ifl nuchmm_screen_init_result_files.txt \
  -srf states_genomic_location.txt -pm -wi -rmf
+```
+e.g.,
+```
+NucHMM nuchmm-screen -gf /data/kun/NucHMM_project/NucHMM_data/annotation/genebody_anno.txt -lwfl like_wigs_list.txt -nucf nucposfile_list.txt -bg 3 -bg 13 -sn 14 -pm -wi -rmf -ifl /data/kun/project/nuchmm_results/nuchmm_screen/nuchmm_screen_init_result_files.txt -srf /data/kun/project/nuchmm_results/nuchmm_screen_init/23_3/states_genomic_location.final.txt
 ```
 
 The default output files:
