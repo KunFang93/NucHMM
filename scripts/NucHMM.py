@@ -1156,6 +1156,8 @@ def NucHMM_screen(genesfile,like_wig_fileslist,nucpositionfiles,bgstate,statesnu
         exit(1)
 
     df_final_info_post = df_final_info_post[final_cols]
+    # add NucS
+    df_final_info_post['NucS'] = ['NucS{}'.format() for i in range(1,len(df_final_info_post)+1)]
     df_final_info_post.to_csv(final_table_name_post,sep='\t')
 
     if writeinfo:
