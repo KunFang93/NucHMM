@@ -1452,8 +1452,8 @@ def cal_regularity_spacing(states_list,celltypelist,array_up,array_down,hz_up,hz
     if plotmark:
         plt.figure()
         plt.bar(legend,np.array(regularity_score),color=bar_color)
-        plt.ylabel('Regularity score')
-        fig_name = 'Regularity_score_' + plot_suffix + get_time() + '.png'
+        plt.ylabel('Phasing score')
+        fig_name = 'Phasing_score_' + plot_suffix + get_time() + '.png'
         plt.savefig(fig_name,dpi=300)
         plt.close()
 
