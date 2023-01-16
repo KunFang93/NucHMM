@@ -570,7 +570,7 @@ def NucHMM_train(config, numhist, refgenome, b, i, numstates, precomp_list, num,
                                                         'Used in identifying the genomic location of HMM states. Default: 5000.')
 @click.option('--uppromoter','-uProm',default=1000,help='Specify upstream boundary of the promoter region. '
                                                         'Used in identifying the genomic location of HMM states. Default: 1000.')
-@click.option('--downbound','-db',default=10000,help='Specify downstream boundary for plotting the distribution, '
+@click.option('--downbound','-db',default=0,help='Specify downstream boundary for plotting the distribution, '
                                                      'cannot exceed than `--downboundary` used in nuchmm-init. Default: 10000.')
 @click.option('--rescalelength','-rl',default=30000,help='Specify the rescaled gene body length. Default: 30000.')
 @click.option('--markthreshold','-mt',default=0.3,help='Specify the mark threshold for state-mark matrix. Default: 0.25.')
