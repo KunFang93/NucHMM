@@ -125,7 +125,7 @@ def cli(config, hmm_directory):
 @click.option('--inpspath','-inps',type=click.Path(), help = 'Required if input has MNase-seq, the path of iNPS.py. '
                                                              'For example, /data/NucHMM/scripts/iNPS_V1.2.2.py.')
 @click.option('--threads','-p',default=5, help = 'Number of threads')
-def NucHMM_prep(fastq,inputfqslist,inputbamslist,fastqc,bowtieindexpath,bowtie2indexpath,inpspath,threads):
+def NucHMM_prep(fastq,inputfqslist,inputbamslist,qualitycontrol,bowtieindexpath,bowtie2indexpath,inpspath,threads):
     '''Prepare files for nuchmm-init from fastq/bam files.
     NucHMM only provide basic fastq and peak calling pipeline. We recommend user use their favorite pipeline to process
     their fastq files and peaking the peaks. But we only accept iNPS result of MNase-seq data currently '''
