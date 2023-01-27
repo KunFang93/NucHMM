@@ -19,6 +19,12 @@ def trimmed_name(file,pe_mark,R_mark):
         current_name_mainbody = re.findall('\w+(?=.fq|.fastq)',current_name)[0]
         current_trimmed_name = 'fq_trim_result/' + current_name_mainbody \
                                + '_trimmed' + current_name.replace(current_name_mainbody,'')
+        if not os.path.exists(current_trimmed_name):
+            current_trimmed_name = 'fq_trim_result/' + current_name_mainbody \
+                               + '_trimmed' + current_name.replace(current_name_mainbody,'').replace('fastq','fq')
+        if not os.path.exists(current_trimmed_name):
+            print("Trimmed_name Error, please mannually change trimmed name to {}".format(current_trimmed_name))
+            exit(1)
     return current_trimmed_name
 
 def bam_name(file,pe):
