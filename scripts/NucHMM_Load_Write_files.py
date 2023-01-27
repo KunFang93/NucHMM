@@ -272,7 +272,11 @@ def write_binnum_file(precomp_file,output):
         d = {}
         for line in inputfile1:
             L = line.strip().split()
-            L_chr = int(L[0]) + 1
+            try:
+                L_chr = int(L[0]) + 1
+            except ValueError:
+                print("Abnormal Chr Idx, Skipped")
+                continue
             if L_chr in d:
                 d[L_chr] += 1
             else:
