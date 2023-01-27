@@ -134,7 +134,7 @@ def NucHMM_prep(fastq,inputfqslist,inputbamslist,qualitycontrol,bowtieindexpath,
     if fastq:
         # elements in read_len_list already in int type
         fq_info_dict = load_fq_list(inputfqslist)
-        if fastqc:
+        if qualitycontrol:
             # add filt_file_list into fq_info_dict
             fq_info_dict = QC_step(fq_info_dict,threads)
             # add aligned_file_list into fq_info_dict
