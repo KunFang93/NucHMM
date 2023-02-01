@@ -172,7 +172,7 @@ def hmm_second(config, refgenome, out_rawhmm, b, i, numstates, numoutputs,
 
     subprocess.call(config.hmm_directory + '/' +software_name + BIC +' -i ' + str(i) + ' -h '+ out_rawhmm +  ' -H ' + rawhmminput +
                 ' -v ' + binoutfile + ' -g ' + refgenome
-                +' '+ str(numstate) + ' ' + str(numobserve) + (' ').join(precompfiles) + ' > '+ bic_file
+                +' '+ str(numstate) + ' ' + str(numobserve) + ' ' + (' ').join(precompfiles) + ' > '+ bic_file
                 ,shell=True)
 
 
