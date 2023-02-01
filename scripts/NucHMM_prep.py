@@ -113,7 +113,7 @@ def Mapping_step(fqinfodict,Bindex,B2index,threads,mapq_cutoff):
                                 files[1] + ' -S |samtools view -F 1804 -f 2 -q ' + str(mapq_cutoff) +
                                 ' -b - | samtools sort -O BAM -o ' + out_bam_name + ' - ', shell=True)
             else:
-                subprocess.call('bowtie -p ' + str(threads) + ' ' + Bindexpath + ' -1 ' + files[0] + ' -2 ' + files[1] +
+                subprocess.call('bowtie -p ' + str(threads) + '-x' + Bindexpath + ' -1 ' + files[0] + ' -2 ' + files[1] +
                                 ' --chunkmbs 200 -S |samtools view -F 1804 -f 2 -q ' + str(mapq_cutoff) +
                                 ' -b - | samtools sort -O BAM -o ' + out_bam_name + ' - ', shell=True)
             aligned_file_list.append(out_bam_name)
@@ -125,7 +125,7 @@ def Mapping_step(fqinfodict,Bindex,B2index,threads,mapq_cutoff):
                                 ' -S |samtools view -F 1804 -q ' + str(mapq_cutoff) + ' -b - | samtools sort -O BAM -o ' +
                                 out_bam_name + ' - ', shell=True)
             else:
-                subprocess.call('bowtie -m 1 -p ' + str(threads) + ' ' + Bindexpath + ' -q ' + files[0] +
+                subprocess.call('bowtie -m 1 -p ' + str(threads) + '-x' + Bindexpath + ' -q ' + files[0] +
                                 ' -S |samtools view -F 1804 -q ' + str(mapq_cutoff) + ' -b - | samtools sort -O BAM -o ' +
                                 out_bam_name + ' - ', shell=True)
             aligned_file_list.append(out_bam_name)
