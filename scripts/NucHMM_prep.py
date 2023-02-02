@@ -110,7 +110,7 @@ def Mapping_step(fqinfodict,Bindex,B2index,threads,mapq_cutoff):
             print("out bam file:", out_bam_name)
             if readlenlist[idx] >= 50:
                 subprocess.call('bowtie2 -p ' + str(threads) + ' -x ' + B2indexpath + ' -1 ' + files[0] + ' -2 ' +
-                                files[1] + ' -S |samtools view -F 1804 -f 2 -q ' + str(mapq_cutoff) +
+                                files[1] + ' |samtools view -F 1804 -f 2 -q ' + str(mapq_cutoff) +
                                 ' -b - | samtools sort -O BAM -o ' + out_bam_name + ' - ', shell=True)
             else:
                 subprocess.call('bowtie -p ' + str(threads) + '-x' + Bindexpath + ' -1 ' + files[0] + ' -2 ' + files[1] +
