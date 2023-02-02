@@ -9,6 +9,7 @@ Nucleosome organization, described as nucleosomal phasing, spacing, and position
 v1.3
 01/09/2023
 * polished codes to make runing more smoothly
+* fixed several bugs
  
 v1.2 
 02/21/2022
