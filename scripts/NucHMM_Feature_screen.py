@@ -1049,7 +1049,7 @@ def nuc_positioning_filter(gl_an_resp_filtfile,gl_an_pos_filtfile,states_list,nu
             sys.stdout.write('\rRead Line:'+str(nuc_count))
             try:
                 nuc_info = nuc_detail_dict[line_chr + '_' + line_start + '_' + line_end]
-            except IndexError:
+            except KeyError:
                 print('Please check the order of the file in inputfileslist and nucdetailfilelist')
                 exit(1)
             line_width = float(nuc_info[1])
