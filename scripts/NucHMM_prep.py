@@ -181,7 +181,7 @@ def Nuc_calling(bamfile,pe,inpspath):
             if count2 >100:
                 break
     g_file.close()
-    count += 1
+#     count += 1
     final_nuc_file = 'nuc_calling_result/' + bamfile_body + '_nucleosome_location.bed'
     subprocess.call('tail -n +' + str(count) + ' ' + gathering_file + ' > ' + final_nuc_file,shell=True)
     return final_nuc_file
