@@ -5,13 +5,14 @@ import re
 import sys
 import subprocess
 import pandas as pd
+import numpy as np
 from itertools import islice
 from contextlib import contextmanager
 from collections import defaultdict
 from NucHMM_common_data import hg19,hg38,val2chr,info2strand
 from NucHMM_utilities import ismember, get_time, process_read, ShowProcess
 from NucHMM_Load_Write_files import load_genome_size_file,load_assignedtf_file,load_nuc_position_file,write_precomp_file, load_histonefile
-
+import pybedtools as pybt
 
 def order_type_dict(inputfilelist):
     input_files = []
@@ -241,127 +242,225 @@ def ciselements_hm_assgin(intersect_cutoff, inputfilelist, cislist, outputfile, 
     # remove tmp files
     subprocess.call("rm {} {} {}".format(tmpoutfile1, tmpoutfile2, tmpgappos), shell=True)
 
-def segment_gene(genefile, segoutfile, up, down, refgene):
-    """geneseg is sub-command for selecting effect region
-    and segment it to three part with directionality label."""
-
-    up_boundary = up
-    down_boundary = down
-    gene_id = defaultdict(list)
-    gene_id2 = defaultdict(list)
-
-
-    with open(genefile,'r') as inputfile, open(segoutfile,'w') as outputfile:
-        d_count ={}
-        L_seg =[]
-        L_SEG = []
-        L_last_chr = 'chr1'
-        count = 0
-        process_bar = ShowProcess(genefile)
-        for line in inputfile:
-            count += 1
-            process_bar.show_process(count)
-            # sys.stdout.write('\rread input: '+str(count) )
-            L = line.strip().split()
-            L_chr = L[0]
-            L_strand = L[3]
-            L_name = L[4]
-            d_count[L_name] = 0
-            if L_strand == '+':
-                L_start = int(L[1])
-                L_end = int(L[2])
-                L_up = L_start - up_boundary
-                if L_up < 0:
-                    L_up = 0
-                L_down = L_end + down_boundary
-                if L_down > refgene[L_chr]:
-                    L_down = refgene[L_chr]
-                str1 = [L_name,L_strand]
-                gene_id[str(L_start)+'_'+L_chr].append('_'.join(str1))
-                gene_id2[str(L_end)+'_'+L_chr].append('_'.join(str1))
+def segment_gene(gene_f,gene_out,up,down,refgene):
+    print("Segment process 1/5")
+    gene_df = pd.read_table(gene_f,header=None)
+    gene_df['tss'] = np.where(gene_df[3]=='+',gene_df[1],gene_df[2])
+    gene_df['tts'] = np.where(gene_df[3]=='+',gene_df[2],gene_df[1])
+    gene_df['up'] = np.where(gene_df[3]=='+', gene_df['tss']-up, gene_df['tss'] + up)
+    gene_df['down'] = np.where(gene_df[3]=='+', gene_df['tts']+down, gene_df['tts'] - down)
+    # segment1
+    gene_df_sub1 = pd.concat([gene_df.loc[gene_df[3]=='+',[0,'up',1,3,4]].rename(columns={0: "chr", "up": "start",
+                                                                                        1: "end", 3:"strand",4:"gene"}),
+                              gene_df.loc[gene_df[3]=='-',[0,'down',1,3,4]].rename(columns={0: "chr", "down": "start",
+                                                                                          1: "end", 3:"strand",4:"gene"})]).sort_index()
+    gene_df_sub1["annot"] = gene_df_sub1['gene'] + '_' + gene_df_sub1['strand'].map(info2strand) + '_' + '1'
+    gene_df_sub1['strand2'] = '-'
+    gene_df_sub1['srt_idx'] = gene_df_sub1.index.values + 0.1
+    # segment 2
+    gene_df_sub2 = pd.concat([gene_df.loc[gene_df[3]=='+', [0,1,2,3,4]].rename(columns={0: "chr", 1: "start",
+                                                                                          2: "end", 3:"strand",4:"gene"}),
+                              gene_df.loc[gene_df[3]=='-', [0,1,2,3,4]].rename(columns={0: "chr", 1: "start",
+                                                                                            2: "end", 3:"strand",4:"gene"})]).sort_index()
+    gene_df_sub2["annot"] = gene_df_sub2['gene'] + '_' + gene_df_sub2['strand'].map(info2strand) + '_' + '2'
+    gene_df_sub2['strand2'] = gene_df_sub2['strand']
+    gene_df_sub2['srt_idx'] = gene_df_sub2.index.values + 0.2
+    # sgement 3
+    gene_df_sub3 = pd.concat([gene_df.loc[gene_df[3]=='+', [0,2,'down',3,4]].rename(columns={0: "chr", 2: "start",
+                                                                                             'down': "end", 3:"strand",4:"gene"}),
+                              gene_df.loc[gene_df[3]=='-', [0,2,'up',3,4]].rename(columns={0: "chr", 2: "start",
+                                                                                           'up': "end", 3:"strand",4:"gene"})]).sort_index()
+    gene_df_sub3["annot"] = gene_df_sub3['gene'] + '_' + gene_df_sub3['strand'].map(info2strand) + '_' + '3'
+    gene_df_sub3['strand2'] = '+'
+    gene_df_sub3['srt_idx'] = gene_df_sub3.index.values + 0.3
+    # combine
+    gene_segment = pd.concat([gene_df_sub1,gene_df_sub2,gene_df_sub3]).sort_values('srt_idx').reset_index(drop=True)
+    print("Segment process 2/5")
+    # limit by chr length
+    gene_segment.loc[gene_segment['start']<0,'start'] = 0
+    for chr in refgene:
+        gene_segment.loc[(gene_segment['chr']==chr)&(gene_segment['end']>refgene[chr]),'end'] = refgene[chr]
+    # add desert info
+    gene_segment_bt = pybt.BedTool.from_dataframe(gene_segment[['chr','start','end']])
+    gene_segment_sort = gene_segment_bt.sort()
+    gene_segment_sort_merge = gene_segment_sort.merge().to_dataframe(disable_auto_names=True,names=['chr','start','end'])
+    gene_desert_list = []
+    gene_desert_list2 = []
+    for chr, chr_df in gene_segment_sort_merge.groupby('chr'):
+        current_dict = {'chr':[],'start':[],'end':[]}
+        if chr_df['start'].values[0]>0:
+            current_dict2 = {'chr':[chr],'start':[0],'end':chr_df['start'].values[0]}
+            gene_desert_list2.append(pd.DataFrame(current_dict2))
+        current_dict['chr'] += list(chr_df['chr'].values[1:])
+        current_dict['start'] += list(chr_df['end'].values[:-1])
+        current_dict['end'] += list(chr_df['start'].values[1:])
+        if chr_df['end'].values[-1] < refgene[chr]:
+            current_dict['chr'].append(chr)
+            current_dict['start'].append(chr_df['end'].values[-1])
+            current_dict['end'].append(refgene[chr])
+        gene_desert_chr = pd.DataFrame(current_dict)
+        gene_desert_list.append(gene_desert_chr)
+    print("Segment process 3/5")
+    gene_desert_start = pd.concat(gene_desert_list2)    
+    gene_desert = pd.concat(gene_desert_list)
+    gene_desert['annot'] = ['desert_{}'.format(i) for i in range(1,len(gene_desert)+1)]
+    gene_desert['strand2'] = ''
+    gene_desert = gene_desert.reset_index(drop=True)
+    gene_segment = gene_segment[['chr','start','end','strand2','annot']]
+    
+    gene_final = pd.concat([gene_segment,gene_desert])
+    gene_final_srt = pybt.BedTool.from_dataframe(gene_final).sort().to_dataframe(disable_auto_names=True,
+                                                                                 names=['chr','start','end','strand','annot'])
+    print("Segment process 4/5")
+    # add start gap
+    for idx, row in gene_desert_start.iterrows():
+        current_chr = row['chr']
+        for chr, chr_df in gene_segment.groupby('chr'):
+            if chr == current_chr:
+                start_idx = chr_df.index.values[0]
+                gene_segment.loc[start_idx-0.3] = list(row) + ['','desert']
             else:
-                L_start = int(L[2])
-                L_end = int(L[1])
-                L_up = L_start + up_boundary
-                if L_up > refgene[L_chr]:
-                    L_up = refgene[L_chr]
-                L_down = L_end - down_boundary
-                if L_down < 0:
-                    L_down = 0
-                str1 = [L_name,L_strand]
-                gene_id[str(L_start)+'_'+L_chr].append('_'.join(str1))
-                gene_id2[str(L_end)+'_'+L_chr].append('_'.join(str1))
-            if L_chr == L_last_chr:
-                if L_strand == '+':
-                    L_seg.extend([L_up, L_start, L_end, L_down])
-                else:
-                    L_seg.extend([L_down,L_end,L_start,L_up])
-            else:
-                L_seg.append(refgene[L_last_chr])
-                L_SEG.append(L_seg)
-                L_seg = []
-                if L_strand == '+':
-                    L_seg.extend([L_up, L_start, L_end, L_down])
-                else:
-                    L_seg.extend([L_down,L_end,L_start,L_up])
-                L_last_chr = L_chr
+                continue
+    for idx, row in gene_desert.iterrows():
+        current_desert = row['annot']
+        desert_row = gene_final_srt[gene_final_srt['annot']==current_desert]
+        up_idx = desert_row.index.values - 1
+        up_row = gene_final_srt.iloc[up_idx,]
+        if up_row['chr'].values[0] == desert_row['chr'].values[0]:
+            segment_upgene_idx = gene_segment[gene_segment['annot']==up_row['annot'].values[0]].index.values[0]
+            gene_segment.loc[segment_upgene_idx+0.5] = desert_row[['chr','start','end','strand','annot']].values.tolist()[0]
+        else:
+            print("Unexpected")
+            print(row)
+    gene_segment = gene_segment.sort_index().reset_index(drop=True)
+    # rename desert
+    gene_segment.loc[gene_segment['annot'].str.contains('desert'),'annot'] = ['desert_{}'.format(i) for i in range(1,len(gene_segment[gene_segment['annot'].str.contains('desert')])+1)]
+    gene_segment.to_csv(gene_out,sep='\t',index=False,header=False)
+    print("Segment process 5/5")
+    return gene_segment
 
-        L_seg.append(refgene['chrY'])
-        L_SEG.append(L_seg)
+# Deprecated    
+# def segment_gene(genefile, segoutfile, up, down, refgene):
+#     """geneseg is sub-command for selecting effect region
+#     and segment it to three part with directionality label."""
 
-        N_Lseg = []
-        for index,chrom in enumerate(L_SEG):
-            # chrom_ss = sorted(chrom)
-            if chrom[-1] > refgene[val2chr[index+1]]:
-                chrom.remove(chrom[-1])
-            if chrom[-1] > refgene[val2chr[index+1]]:
-                chrom.remove(chrom[-1])
-            N_Lseg.append(chrom)
+#     up_boundary = up
+#     down_boundary = down
+#     gene_id = defaultdict(list)
+#     gene_id2 = defaultdict(list)
 
-        count_num = 0
-        dessert_count = 0
-        for index,chrom in enumerate(N_Lseg):
-            for i in range(len(N_Lseg[index])-1):
-                # chrom_s = sorted(chrom)
-                tmp_start = chrom[slice(i,i+2)][0]
-                start = str(tmp_start)+'_'+val2chr[index+1]
-                tmp_end = chrom[slice(i,i+2)][1]
-                end = str(tmp_end)+'_'+val2chr[index+1]
-                if start in gene_id:
-                    info = gene_id[start][0].split('_')
-                    if info[1] == '-':
-                        d_count[info[0]] += 1
-                        outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
-                                         '\t'+'+'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                    else:
-                        d_count[info[0]] += 1
-                        outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
-                                         '\t'+info[1]+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                elif end in gene_id:
-                    info = gene_id[end][0].split('_')
-                    d_count[info[0]] += 1
-                    outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
-                                     '\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                elif start in gene_id2:
-                    info = gene_id2[start][0].split('_')
-                    d_count[info[0]] += 1
-                    outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
-                                     '\t'+info[1]+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                elif end in gene_id2:
-                    info = gene_id2[end][0].split('_')
-                    d_count[info[0]] += 1
-                    if info[1] == '+':
-                        outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+
-                                         str(tmp_end)+'\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                    else:
-                        outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+
-                                         '\t'+str(tmp_end)+'\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
-                elif tmp_end - tmp_start > 0:
-                    dessert_count += 1
-                    outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+
-                                     '\t'+str(tmp_end)+'\t'+' '+'\t'+'dessert'+'_'+str(dessert_count)+'\n')
-    inputfile.close()
-    outputfile.close()
+
+#     with open(genefile,'r') as inputfile, open(segoutfile,'w') as outputfile:
+#         d_count ={}
+#         L_seg =[]
+#         L_SEG = []
+#         L_last_chr = 'chr1'
+#         count = 0
+#         process_bar = ShowProcess(genefile)
+#         for line in inputfile:
+#             count += 1
+#             process_bar.show_process(count)
+#             # sys.stdout.write('\rread input: '+str(count) )
+#             L = line.strip().split()
+#             L_chr = L[0]
+#             L_strand = L[3]
+#             L_name = L[4]
+#             d_count[L_name] = 0
+#             if L_strand == '+':
+#                 L_start = int(L[1])
+#                 L_end = int(L[2])
+#                 L_up = L_start - up_boundary
+#                 if L_up < 0:
+#                     L_up = 0
+#                 L_down = L_end + down_boundary
+#                 if L_down > refgene[L_chr]:
+#                     L_down = refgene[L_chr]
+#                 str1 = [L_name,L_strand]
+#                 gene_id[str(L_start)+'_'+L_chr].append('_'.join(str1))
+#                 gene_id2[str(L_end)+'_'+L_chr].append('_'.join(str1))
+#             else:
+#                 L_start = int(L[2])
+#                 L_end = int(L[1])
+#                 L_up = L_start + up_boundary
+#                 if L_up > refgene[L_chr]:
+#                     L_up = refgene[L_chr]
+#                 L_down = L_end - down_boundary
+#                 if L_down < 0:
+#                     L_down = 0
+#                 str1 = [L_name,L_strand]
+#                 gene_id[str(L_start)+'_'+L_chr].append('_'.join(str1))
+#                 gene_id2[str(L_end)+'_'+L_chr].append('_'.join(str1))
+#             if L_chr == L_last_chr:
+#                 if L_strand == '+':
+#                     L_seg.extend([L_up, L_start, L_end, L_down])
+#                 else:
+#                     L_seg.extend([L_down,L_end,L_start,L_up])
+#             else:
+#                 L_seg.append(refgene[L_last_chr])
+#                 L_SEG.append(L_seg)
+#                 L_seg = []
+#                 if L_strand == '+':
+#                     L_seg.extend([L_up, L_start, L_end, L_down])
+#                 else:
+#                     L_seg.extend([L_down,L_end,L_start,L_up])
+#                 L_last_chr = L_chr
+
+#         L_seg.append(refgene['chrY'])
+#         L_SEG.append(L_seg)
+
+#         N_Lseg = []
+#         for index,chrom in enumerate(L_SEG):
+#             # chrom_ss = sorted(chrom)
+#             if chrom[-1] > refgene[val2chr[index+1]]:
+#                 chrom.remove(chrom[-1])
+#             if chrom[-1] > refgene[val2chr[index+1]]:
+#                 chrom.remove(chrom[-1])
+#             N_Lseg.append(chrom)
+
+#         count_num = 0
+#         dessert_count = 0
+#         for index,chrom in enumerate(N_Lseg):
+#             for i in range(len(N_Lseg[index])-1):
+#                 # chrom_s = sorted(chrom)
+#                 tmp_start = chrom[slice(i,i+2)][0]
+#                 start = str(tmp_start)+'_'+val2chr[index+1]
+#                 tmp_end = chrom[slice(i,i+2)][1]
+#                 end = str(tmp_end)+'_'+val2chr[index+1]
+#                 if start in gene_id:
+#                     info = gene_id[start][0].split('_')
+#                     if info[1] == '-':
+#                         d_count[info[0]] += 1
+#                         outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
+#                                          '\t'+'+'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                     else:
+#                         d_count[info[0]] += 1
+#                         outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
+#                                          '\t'+info[1]+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                 elif end in gene_id:
+#                     info = gene_id[end][0].split('_')
+#                     d_count[info[0]] += 1
+#                     outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
+#                                      '\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                 elif start in gene_id2:
+#                     info = gene_id2[start][0].split('_')
+#                     d_count[info[0]] += 1
+#                     outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+str(tmp_end)+
+#                                      '\t'+info[1]+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                 elif end in gene_id2:
+#                     info = gene_id2[end][0].split('_')
+#                     d_count[info[0]] += 1
+#                     if info[1] == '+':
+#                         outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+'\t'+
+#                                          str(tmp_end)+'\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                     else:
+#                         outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+
+#                                          '\t'+str(tmp_end)+'\t'+'-'+'\t'+info[0]+'_'+info2strand[info[1]]+'_'+str(d_count[info[0]])+'\n')
+#                 elif tmp_end - tmp_start > 0:
+#                     dessert_count += 1
+#                     outputfile.write(val2chr[index+1]+'\t'+str(tmp_start)+
+#                                      '\t'+str(tmp_end)+'\t'+' '+'\t'+'dessert'+'_'+str(dessert_count)+'\n')
+#     inputfile.close()
+#     outputfile.close()
 
 def precompile_step(assignedfilelist, segfile, outputfilelist, refgene):
     """precompile is the sub-command that prepare the input file
