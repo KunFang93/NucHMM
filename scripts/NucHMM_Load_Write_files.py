@@ -525,7 +525,11 @@ def write_final_array(file,outname):
                 outline = [array_chr,array_start,array_end,array_state,str(pos_ave),str(spa_ave)]
                 out_file.write('\t'.join(outline) +'\n')
             elif line_array_mark == 'single':
-                outline = [line_chr,line_start,line_end,line_state,str(line_pos),str(line_spa)]
+                # single type don't have spacing information
+                outline = [line_chr,line_start,line_end,line_state,str(line_pos),-1]
                 out_file.write('\t'.join(outline) +'\n')
+            else:
+                print("Cannot recognize array mark")
+                print('\t'.join(outline) +'\n')
     input_file.close()
     out_file.close()
