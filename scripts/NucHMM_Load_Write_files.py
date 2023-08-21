@@ -507,7 +507,11 @@ def write_final_array(file,outname):
             line_pos = float(line_info[4])
             line_spa = float(line_info[5])
             line_array_mark = line_info[6]
-            if line_array_mark == 'array-start':
+            if line_array_mark == 'single':
+                # single type don't have spacing information
+                outline = [line_chr,line_start,line_end,line_state,str(line_pos),-1]
+                out_file.write('\t'.join(outline) +'\n')
+            elif line_array_mark == 'array-start':
                 array_pos = [line_pos]
                 array_spa = [line_spa]
                 array_chr = line_chr
@@ -523,10 +527,6 @@ def write_final_array(file,outname):
                 pos_ave = np.round(np.mean(array_pos),3)
                 spa_ave = np.round(np.mean(array_spa),3)
                 outline = [array_chr,array_start,array_end,array_state,str(pos_ave),str(spa_ave)]
-                out_file.write('\t'.join(outline) +'\n')
-            elif line_array_mark == 'single':
-                # single type don't have spacing information
-                outline = [line_chr,line_start,line_end,line_state,str(line_pos),-1]
                 out_file.write('\t'.join(outline) +'\n')
             else:
                 print("Cannot recognize array mark")
