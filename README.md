@@ -571,4 +571,4 @@ NucHMM is now published in Genome Biology. If it helps your research, please cit
      Fang, K., Li, T., Huang, Y. et al. NucHMM: a method for quantitative modeling of nucleosome organization identifying functional nucleosome states distinctly associated with splicing potentiality. Genome Biol 22, 250 (2021). https://doi.org/10.1186/s13059-021-02465-1
 ```
 ## Contact Us
-Kun Fang: kfang@mcw.edu; Victor Jin: vjin@mcw.edu
+Kun Fang: kf2799@cumc.columbia.edu; Victor Jin: vjin@mcw.edu
