@@ -34,7 +34,7 @@ v1.1
 * fix background_state bug for nuchmm-screen-init
 
 ## Workflow
-<img src="https://github.com/KunFang93/GISTA/blob/main/Workflow.png" width="900">
+<img src="https://github.com/KunFang93/NucHMM/blob/master/workflow/NucHMM_workflow.png" width="900">
 
 ## Installation
 
